@@ -13,6 +13,11 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.rmi.*;
 import java.rmi.server.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
 import javax.sip.*;
 import javax.sip.message.*; 
 import javax.sip.header.*;
@@ -103,6 +108,7 @@ implements RegistrarAccess {
     }
     
     public void parseXMLregistrations(String file) {
+    	/*
         try{
             xmlRegistrationsFile=file;
        
@@ -139,6 +145,40 @@ implements RegistrarAccess {
 	    }
             e.printStackTrace();
         }
+        
+    	*/
+    //<=================================== D  A T A B A S E     I N S T E A D     O F      X M L ======================>
+    	
+    	try{  
+		    Class.forName("com.mysql.jdbc.Driver");  
+		    Connection con=DriverManager.getConnection(  
+		    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
+		    //here sonoo is database name, root is username and password  
+		    Statement stmt=con.createStatement();  
+		    ResultSet rs=stmt.executeQuery("select * from Registrations");  
+		    Registration registration;
+		    while(rs.next())  {
+		    	registration=new Registration();
+		    	registration.setDisplayName(rs.getString(2));
+		    	registration.setKey(rs.getString(4));
+		    	registrationsTable.addRegistration(registration);
+		    	PresenceServer presenceServer = proxy.getPresenceServer();
+			    presenceServer.processUploadedRegistration(registration);
+		    }
+		    con.close();  
+	
+	    }
+	    catch(Exception e){ 
+	    	System.out.println(e);
+	    	 if (ProxyDebug.debug)  {
+	             ProxyDebug.println
+			("ERROR, Registrar, Registrar(), exception  raised during"+
+	             " parsing of the static registrations:");
+		    }
+	         e.printStackTrace();
+	    	} 
+  
+    //<================================================================================================================>
     }
     
  
