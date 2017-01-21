@@ -293,7 +293,8 @@ public class DualListBox extends JPanel {
   private class AddListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
       Object selected[] = destList.getSelectedValues();
-      System.out.println(selected[0].toString());
+      if(selected.length()==0) return;
+      System.out.println("You want to block "+selected[0].toString());
       
       
       try{  
@@ -335,7 +336,10 @@ public class DualListBox extends JPanel {
   private class RemoveListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
       Object selected[] = sourceList.getSelectedValues();
-      try{  
+      if(selected.length()==0) return;
+      System.out.println("You want to unblock "+selected[0].toString());
+      
+	try{  
     	    //Class.forName("com.mysql.jdbc.Driver");  
     	    Connection con=DriverManager.getConnection(  
     	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
