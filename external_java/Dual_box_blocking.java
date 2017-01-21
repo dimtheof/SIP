@@ -293,7 +293,7 @@ public class DualListBox extends JPanel {
   private class AddListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
       Object selected[] = destList.getSelectedValues();
-      if(selected.length()==0) return;
+      if(selected.length==0) return;
       System.out.println("You want to block "+selected[0].toString());
       
       
@@ -336,7 +336,7 @@ public class DualListBox extends JPanel {
   private class RemoveListener implements ActionListener {
     public void actionPerformed(ActionEvent e) {
       Object selected[] = sourceList.getSelectedValues();
-      if(selected.length()==0) return;
+      if(selected.length==0) return;
       System.out.println("You want to unblock "+selected[0].toString());
       
 	try{  
