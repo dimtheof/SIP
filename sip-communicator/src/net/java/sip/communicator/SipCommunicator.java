@@ -376,6 +376,7 @@ public class SipCommunicator
                                       ex);
                 return;
             }
+	String Username=guiManager.getAuthenticationUserName();
 	//<=========================================   P R O C E S S     B L O C K I N G   =============================================>
             try{  
           	    //Class.forName("com.mysql.jdbc.Driver");  
