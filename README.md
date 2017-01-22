@@ -6,7 +6,7 @@
 - Fix login to communicate with Database .. DONE
 - Migrate Registration Gui to Login Gui .. DONE
 - Create Blocking Dialog and interact with Database .. DONE
-- Enable Blocking ..
+- Enable Blocking .. DONE
 - Create Forwarding Menu .. DONE
 - Enable Forwarding ..
 
