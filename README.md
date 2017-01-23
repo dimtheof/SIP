@@ -8,7 +8,10 @@
 - Create Blocking Dialog and interact with Database .. DONE
 - Enable Blocking .. DONE
 - Create Forwarding Menu .. DONE
-- Enable Forwarding ..
+- Enable Forwarding .. DONE 
+- Create Billing .. DONE
+- Create Billing .. DONE
+- Enable Billing .. DONE
 
 
 
