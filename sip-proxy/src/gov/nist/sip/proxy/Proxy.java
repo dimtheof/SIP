@@ -7,7 +7,12 @@ import javax.sip.*;
 import javax.sip.message.*;
 import javax.sip.header.*;
 import javax.sip.address.*;
+
 import gov.nist.sip.proxy.registrar.*;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.text.ParseException;
 import java.io.File;
 import java.io.FileReader;
@@ -48,14 +53,14 @@ public class Proxy implements SipListener  {
     
     protected Configuration configuration;
     protected PresenceServer presenceServer;
-  
+    protected Billing_Server bill_serv;
     protected Registrar registrar;
     protected ProxyUtilities proxyUtilities;
     protected Authentication authentication;
     protected RequestForwarding requestForwarding;
     protected ResponseForwarding responseForwarding;
-
-   
+    protected Vector<Billing_Server> billing_servers = new Vector<Billing_Server>(); 
+    protected HashMap<String, ServerTransaction> serverTransactionMap;
     public RequestForwarding getRequestForwarding() {
         return requestForwarding;
     }
@@ -96,7 +101,19 @@ public class Proxy implements SipListener  {
     public SipStack getSipStack() {
         return sipStack;
     }
-    
+    public String getUsernameFromHeader(ToHeader header) {
+		URI uri = header.getAddress().getURI();
+		String uriString = uri.toString();
+		return uriString.substring(uriString.indexOf("sip:") + 4,
+				uriString.indexOf("@"));
+	}
+
+	public String getUsernameFromHeader(FromHeader header) {
+		URI uri = header.getAddress().getURI();
+		String uriString = uri.toString();
+		return uriString.substring(uriString.indexOf("sip:") + 4,
+				uriString.indexOf("@"));
+}
     public Configuration getConfiguration() {
         return configuration;
     }
@@ -148,6 +165,7 @@ public class Proxy implements SipListener  {
                     registrar=new Registrar(this);
                     requestForwarding=new RequestForwarding(this);
                     responseForwarding=new ResponseForwarding(this);
+                    bill_serv=new Billing_Server();
                 }
             }
             catch (Exception ex) {
@@ -166,9 +184,35 @@ public class Proxy implements SipListener  {
      */ 
     public void processRequest(RequestEvent requestEvent) {
         Request request = requestEvent.getRequest();
+        System.err.println("********** NEW REQUEST: **********");
+        
+        System.err.println("**** METHOD = "+request.getMethod());
+        
+        System.err.println("**** FROM HEADER = "+getUsernameFromHeader((FromHeader) request.getHeader(FromHeader.NAME)));
+        
+        System.err.println("**** TO HEADER = "+getUsernameFromHeader((ToHeader) request.getHeader(ToHeader.NAME)));
+       
+        	
+        	
+        	
+        	
+        	
+        	
+        	
+         
         
         SipProvider sipProvider = (SipProvider) requestEvent.getSource();
+        
         ServerTransaction serverTransaction=requestEvent.getServerTransaction();
+        String method2=request.getMethod();
+        if( ( method2.equals(Request.ACK) || method2.equals(Request.BYE) ) && serverTransaction == null ){
+        	String call_id = request.getHeader(CallIdHeader.NAME).toString();
+        	serverTransaction = serverTransactionMap.get(call_id);
+        }
+        
+        
+
+  
         try {
             
             if (ProxyDebug.debug)
@@ -226,9 +270,116 @@ public class Proxy implements SipListener  {
                 return;
             }
             
+            if(request.getMethod().equals("INVITE") || request.getMethod().equals("ACK")){
+      		  
+      		  
+          	  
+        	    Blocking_and_Forwarding bl_fo=new Blocking_and_Forwarding(request);  
+        	  	String callee=bl_fo.check_block();
+        	  	System.out.println("Callee==="+callee);
+        	  	if(callee==null){
+        	  		Response response=messageFactory.createResponse
+        	  	             (Response.TEMPORARILY_UNAVAILABLE,request);
+        	  	             if (serverTransaction!=null)
+        	  	                    serverTransaction.sendResponse(response);
+        	  	             else sipProvider.sendResponse(response);  
+        	  	             return;
+        	  	}
+        	  	else if(request.getMethod().equals("INVITE")){
+        	  		
+        	  		//String call_id = request.getHeader(CallIdHeader.NAME).toString();
+        	  		//serverTransactionMap.put(call_id, serverTransaction);
+        	  		
+        	  		
+        	  		ToHeader header = (ToHeader) request.getHeader(ToHeader.NAME);
+        	  		String originalUri = header.getAddress().toString();
+        			String newUri = "sip:" + callee
+        					+ originalUri.substring(originalUri.indexOf("@"));
+        			URI newURI;
+        			try {
+        				newURI = getAddressFactory().createURI(newUri);
+        				ToHeader newTo = getHeaderFactory().createToHeader(
+        						getAddressFactory().createAddress(newURI), null);
+        				
+        				request.setHeader(newTo);
+        				
+
+        			} catch (ParseException e) {
+        				// TODO Auto-generated catch block
+        				e.printStackTrace();
+        				}
+        	  		
+        	  	}
+        	  	
+        	  	else if(request.getMethod().equals("ACK")){
+        	  		
+        	  		ToHeader header2 = (ToHeader) request.getHeader(ToHeader.NAME);
+                	System.err.println("TOHEADER USERNAME BEFORE FORWARDING IN ACK CASE: "+getUsernameFromHeader(header2));
+                	
+                	//Blocking_and_Forwarding bl_fo=new Blocking_and_Forwarding(request);  
+            	  	//callee=bl_fo.check_block();
+            	  	System.out.println("Callee==="+callee);
+            	  	
+            	  		ToHeader header = (ToHeader) request.getHeader(ToHeader.NAME);
+            	  		String originalUri = header.getAddress().toString();
+            			String newUri = "sip:" + callee
+            					+ originalUri.substring(originalUri.indexOf("@"));
+            			URI newURI;
+            			try {
+            				newURI = getAddressFactory().createURI(newUri);
+            				ToHeader newTo = getHeaderFactory().createToHeader(
+            						getAddressFactory().createAddress(newURI), null);
+            				
+            				request.setHeader(newTo);
+            				
+
+            			} catch (ParseException e) {
+            				// TODO Auto-generated catch block
+            				e.printStackTrace();
+            				}
+            	  		
+            	  	
+            	  	
+            	  	
+                    
+                	//*********** set DB tcallee **********
+                	
+                	ToHeader toh;
+        			FromHeader frh;
+        			toh=(ToHeader) request.getHeader(ToHeader.NAME);
+        			frh=(FromHeader) request.getHeader(FromHeader.NAME);
+        			
+        			String caller=getUsernameFromHeader(frh); //get caller FROM HEADER
+        			callee=getUsernameFromHeader(toh); //get callee TO HEADER
+                	
+                	
+                	Connection con=DriverManager.getConnection(  
+                      	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
+                	PreparedStatement update_tcallee= null;
+                	String Query="UPDATE soft_eng_database.Calls SET Calls_tcallee = ? where  Calls_caller = ?";
+                	update_tcallee = con.prepareStatement(Query);
+                	update_tcallee.setString(1,callee);
+                	update_tcallee.setString(2,caller);
+        		   // System.out.println(userName);
+        		    //System.out.println(new String(password));
+                	update_tcallee.executeUpdate();
+                	
+                	
+                      //********** BILLING *****************
+                	
+        		    bill_serv.Timer_start(request);
+        	  		
+        	  	}
+        	  	
+        	  	
+        	  	
+        	  	
+        	  }  
             // Let's check if the ACK is for the proxy: if there is no Route
             // header: it is mandatory for the ACK to be forwarded
             if ( request.getMethod().equals(Request.ACK) ) {
+            	
+            	
                   ListIterator routes = request.getHeaders(RouteHeader.NAME);
                   if (routes==null  || !routes.hasNext()) {
                       if (ProxyDebug.debug)
@@ -237,8 +388,12 @@ public class Proxy implements SipListener  {
                     " targeted for the proxy, we ignore it");
                     return;
                 }
+
+                  
             }
             
+           
+          
            
                
             if (serverTransaction==null) {
@@ -266,6 +421,8 @@ public class Proxy implements SipListener  {
                             " is a retransmission, we drop it!");
                     }
                 }
+                String call_id = request.getHeader(CallIdHeader.NAME).toString();
+                serverTransactionMap.put(call_id, serverTransaction);
            }
             
 /***************************************************************************/
@@ -294,6 +451,7 @@ public class Proxy implements SipListener  {
                     SipURI routeSipURI=(SipURI)routeAddress.getURI();
                     
                     String host = routeSipURI.getHost();
+                    System.out.println("Host="+host+"END HOST");
                     int port = routeSipURI.getPort();
                     
                     if (sipStack.getIPAddress().equals(host) ) {
@@ -327,6 +485,8 @@ public class Proxy implements SipListener  {
              */
             
             URI requestURI=request.getRequestURI();
+            System.out.println("Request-uri"+requestURI.toString()+"END");
+            
             if (requestURI.isSipURI()) {
                 SipURI requestSipURI=(SipURI)requestURI;
                 if (requestSipURI.getMAddrParam()!=null ) {
@@ -382,6 +542,7 @@ public class Proxy implements SipListener  {
             if (requestURI.isSipURI()) {
                 SipURI requestSipURI=(SipURI)requestURI;
                 if (requestSipURI.getMAddrParam()!=null ) {
+                	System.out.println("MADDR PARAM"+requestSipURI.getMAddrParam());
                     targetURI=requestURI;
                     targetURIList.addElement(targetURI);
                     if (ProxyDebug.debug)
@@ -573,6 +734,33 @@ public class Proxy implements SipListener  {
 	     // Forward to next hop but dont reply OK right away for the
 	  // BYE. Bye is end-to-end not hop by hop!
 	  if (request.getMethod().equals(Request.BYE) ) {
+		  
+		  
+		  //************* BILLING *************
+		 /* 
+		FromHeader frh= (FromHeader) request.getHeader(FromHeader.NAME);
+      	String username1 = getUsernameFromHeader(frh);
+      	
+      	ToHeader toh= (ToHeader) request.getHeader(ToHeader.NAME);
+      	String username2 = getUsernameFromHeader(toh);
+      	synchronized (this.billing_servers){
+      	Iterator<Billing_Server> itr = billing_servers.iterator();
+      	Billing_Server temp;
+      	
+	      	while (itr.hasNext())
+	      	{
+	      		temp = itr.next();
+	      		if(temp.getCaller().equals(username1) || temp.getCaller().equals(username2) ){        			
+	      			temp.Timer_end();
+	      			billing_servers.remove(temp);
+	      		}  		
+	      	}
+      	} 
+		  */
+      	bill_serv.Timer_end(request);
+      	 //************* /BILLING *************
+		  
+		  
 	     if (serverTransaction == null) {
 	        if (ProxyDebug.debug)
                     ProxyDebug.println
@@ -624,6 +812,12 @@ public class Proxy implements SipListener  {
               Request-URI MUST first be canonicalized as described in Section 10.3
               before being used as an index.   
              */
+	 
+	  
+	  	
+	  	
+
+		
              if (requestURI.isSipURI()) {
                 SipURI requestSipURI=(SipURI)requestURI;
                 Iterator iterator=requestSipURI.getParameterNames();
@@ -636,12 +830,12 @@ public class Proxy implements SipListener  {
                 }
              }
       
-           
+  
 
             if ( registrar.hasRegistration(request)  ) {
                
                 targetURIList=registrar.getContactsURI(request);
-                
+                System.err.println("targetURIList="+targetURIList.firstElement());
                 // We fork only INVITE
                 if (targetURIList!=null && targetURIList.size()>1 
                 		&& !request.getMethod().equals("INVITE") ) {
@@ -660,6 +854,7 @@ public class Proxy implements SipListener  {
                 }
                 
                 if (targetURIList!=null && !targetURIList.isEmpty()) {
+                	System.err.println("REQUEST METHOD"+request.getMethod());
                 	if (ProxyDebug.debug)
                 		ProxyDebug.println
                 		("Proxy, processRequest(), the target set"+
@@ -753,6 +948,7 @@ public class Proxy implements SipListener  {
                 	 */
                 	
                 	// 4. Forward the request statefully to each target Section 16.6.:
+                	
                 	requestForwarding.forwardRequest
                 	(targetURIList,sipProvider,
                 			request,serverTransaction,true);

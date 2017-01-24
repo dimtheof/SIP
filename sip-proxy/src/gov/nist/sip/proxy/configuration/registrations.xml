@@ -19,12 +19,4 @@
           <CONTACT  uri="sip:amelie@129.6.50.23" />
     
 -->
-<REGISTRATIONS> 
-    <REGISTRATION  displayName="Ranga " uri="sip:mranga@nist.gov" >
-	<BUDDY     uri = "sip:deruelle@nist.gov" />
-    </REGISTRATION>
 
-    <REGISTRATION  displayName="Deruelle " uri="sip:deruelle@nist.gov" >
-	<BUDDY     uri = "sip:mranga@nist.gov" />
-    </REGISTRATION>
-</REGISTRATIONS> 

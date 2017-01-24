@@ -338,6 +338,7 @@ public class GuiManager
         if (callee == null || callee.trim().length() < 1) {
             return;
         }
+        System.out.println("Callee="+callee);
         UserCallInitiationEvent commEvt = new UserCallInitiationEvent(callee);
         for (int i = listeners.size() - 1; i >= 0; i--) {
             ( (UserActionListener) listeners.get(i)).handleDialRequest(commEvt);

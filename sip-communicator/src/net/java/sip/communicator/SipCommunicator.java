@@ -60,6 +60,12 @@ package net.java.sip.communicator;
 import java.io.*;
 import java.lang.reflect.*;
 import java.net.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.awt.*;
 import net.java.sip.communicator.common.*;
@@ -72,6 +78,9 @@ import net.java.sip.communicator.sip.*;
 import net.java.sip.communicator.sip.event.*;
 import net.java.sip.communicator.sip.security.*;
 import java.io.IOException;
+
+import javax.swing.JOptionPane;
+
 import net.java.sip.communicator.plugin.setup.*;
 import net.java.sip.communicator.sip.simple.*;
 
@@ -332,6 +341,7 @@ public class SipCommunicator
             if (!interlocutor.getCallState().equals(Call.ALERTING)) {
                 return;
             }
+            
             String sdpData = null;
             try {
                 sdpData = mediaManager.generateSdpDescription();
@@ -363,10 +373,12 @@ public class SipCommunicator
 
     public void handleDialRequest(UserCallInitiationEvent evt)
     {
+    	boolean i_am_blocked=false;
         try {
             console.trace(
                 "Entering handleDialRequest(UserCallInitiationEvent)");
             String callee = (String) evt.getSource();
+            
             String sdpData = null;
             try {
                 sdpData = mediaManager.generateSdpDescription();
@@ -376,8 +388,10 @@ public class SipCommunicator
                                       ex);
                 return;
             }
-	String Username=guiManager.getAuthenticationUserName();
-	//<=========================================   P R O C E S S     B L O C K I N G   =============================================>
+            /*
+            String Username=guiManager.getAuthenticationUserName();
+            Vector<String> usersWhoBlockedMe= new Vector<String>();;
+  //<=========================================   P R O C E S S     B L O C K I N G   =============================================>
             try{  
           	    //Class.forName("com.mysql.jdbc.Driver");  
           	    Connection con=DriverManager.getConnection(  
@@ -388,19 +402,22 @@ public class SipCommunicator
 
           	    //String userName ="kanell21";
           	    
+          	     //usersWhoBlockedMe = new Vector<String>();
           	    
           	    PreparedStatement check_block= null;
-          	    String updateQuery="select * from Blocking where Blocked= ? and Blocker= ? ";
+          	    String updateQuery="select * from Blocking where Blocked= ? ";
           	    check_block = con.prepareStatement(updateQuery);
           	    check_block.setString(1,Username);
-          	    check_block.setString(2,callee);
+          	    
+          	    //check_block.setString(2,callee);
           	    ResultSet rs;
           	    rs=check_block.executeQuery();
           	    i_am_blocked=false;
-          	    if(rs.next()) i_am_blocked=true;
-          	    
-          	    
-          	    
+          	    while(rs.next()){
+          	    	System.out.println(rs.getString(1));
+          	    	usersWhoBlockedMe.addElement(rs.getString(1));
+          	    	
+          	    }
           	    
           	    
           	   // System.out.println(userName);
@@ -414,8 +431,8 @@ public class SipCommunicator
              
              }
             
-
-            if(i_am_blocked==true){
+            
+            if(usersWhoBlockedMe.contains(callee)){
 		    	JOptionPane.showMessageDialog(null,
 		    		    "User Temporarily Unavailable",
 		    		    "Error",
@@ -423,8 +440,69 @@ public class SipCommunicator
 		    	System.out.println("User does not exist");
             	return ;
             }
-//<=======================================================================================================================================>            
+            
+//<================================================================================================================================> 
+            
+//<==================================  P  R O C E S S   F O R W A R D I N G =======================================================>       
+            
+            String url = "jdbc:mysql://localhost:3306/soft_eng_database";
+    		String dbusername = "root";
+    		String dbpassword = "root";
+    		String query;
+    		//System.out.println("Connecting database...");
+    		Vector<String> forwUsers = new Vector<String>();
+    		forwUsers.addElement(callee);
+    		forwUsers.addElement(Username);
+    		try (Connection connection = DriverManager.getConnection(url, dbusername, dbpassword)) {
+    			
+    		    
+    		    int i = 0;
+    		    do{
+    		    	query = "select Forwarding_user from Forwarding where Username = \""+callee+"\"";
+    		    	Statement stmt = connection.createStatement();
+    			    ResultSet rs = stmt.executeQuery(query);
+    			    if(rs.next()){
+    			    	callee = rs.getString(1);
+    			    	System.out.println(callee);
+    			    	if(usersWhoBlockedMe.contains(callee)){
+    				    	JOptionPane.showMessageDialog(null,
+    				    		    "User Temporarily Unavailable",
+    				    		    "Error",
+    				    		    JOptionPane.ERROR_MESSAGE);
+    				    	System.out.println("User does not exist");
+    		            	return ;
+    		            }
+    			    	if(forwUsers.contains(callee)){
+    			    		JOptionPane.showMessageDialog(null,
+    				    		    "Cycle exists",
+    				    		    "Error",
+    				    		    JOptionPane.ERROR_MESSAGE);
+    				    	System.out.println("User does not exist");
+    			    		return;
+    			    	}
+    			    	forwUsers.addElement(callee);
+    			    }
+    			    else break;
+    		    	
+    		    } while (++i<50);
+    		    if(i==50){
+    		    	JOptionPane.showMessageDialog(null,
+			    		    "Exceeded 50 forwards",
+			    		    "Error",
+			    		    JOptionPane.ERROR_MESSAGE);
+			    	System.out.println("User does not exist");
+			    	return;
+    		    }
+    		    
+    		  } catch (SQLException e) {
+    		      throw new IllegalStateException("Cannot connect the database!", e);
+    		}           
+                          
+    		*/
+            
+//<==================================================================================================================================>            
             try {
+            	
                 Call call = sipManager.establishCall(callee, sdpData);
                 call.addStateChangeListener(this);
                 Interlocutor interlocutor = new Interlocutor();

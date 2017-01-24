@@ -60,18 +60,16 @@ package net.java.sip.communicator.gui;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.awt.event.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.awt.event.*;
+import java.sql.Statement;
 import java.util.*;
 import javax.swing.*;
-
-import com.mysql.jdbc.PreparedStatement;
-
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import net.java.sip.communicator.common.Utils;
 import net.java.sip.communicator.common.*;
 
 //import samples.accessory.StringGridBagLayout;
@@ -118,20 +116,11 @@ public class AuthenticationSplash
      * not be internationalized.
      */
     private String CMD_LOGIN = "cmd.login" /*NOI18N*/;
-/*INSERTED BY dimtheof*/    
-    /**
-     * Command string for a register action (e.g., a button).
-     * This string is never presented to the user and should
-     * not be internationalized.
-     */
-    private String CMD_REGISTER = "cmd.register" /*NOI18N*/;
 
     // Components we need to manipulate after creation
     private JButton loginButton = null;
     private JButton cancelButton = null;
     private JButton helpButton = null;
-    /*INSERTED BY dimtheof*/ 
-    private JButton registerButton = null;
 
     /**
      * Creates new form AuthenticationSplash
@@ -381,24 +370,6 @@ public class AuthenticationSplash
                 dialogDone(event);
             }
         });
-/*INSERTED BY dimtheof*/        
-        registerButton = new JButton();
-        registerButton.setText("Register");
-        registerButton.setActionCommand(CMD_REGISTER);
-        registerButton.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent event)
-            {	
-            	
-            	RegistrationGUI rgui = new RegistrationGUI();
-            	rgui.pack();
-            	callchangeFocus(rgui);
-            	
-            }
-        });
-        
-        buttonPanel.add(registerButton);
-        
         //buttonPanel.add(helpButton);
         c = new GridBagConstraints();
         c.gridx = 0;
@@ -411,11 +382,10 @@ public class AuthenticationSplash
         contents.add(centerPane, BorderLayout.CENTER);
         getRootPane().setDefaultButton(loginButton);
         equalizeButtonSizes();
+
         setFocusTraversalPolicy(new FocusTraversalPol());
-        setModal(false);
+
     } // initComponents()
-    
-  
 
     /**
      * Sets the buttons along the bottom of the dialog to be the
@@ -495,57 +465,58 @@ public class AuthenticationSplash
         else if (cmd.equals(CMD_LOGIN)) {
             userName = userNameTextField.getText();
             password = passwordTextField.getPassword();
+            
             try{  
-                Class.forName("com.mysql.jdbc.Driver");  
-                Connection con=DriverManager.getConnection(  
-                "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
-               
-                
-                
-      //<=======================================C H E C K    L O G I N    C R E D E N T I A L S     ==================================>
-                
-                PreparedStatement select_login= null;
-                String selectQuery="select * from soft_eng_database.Registrations where reg_username = ? and reg_pass = ? ";
-                select_login = (PreparedStatement) con.prepareStatement(selectQuery);
-                select_login.setString(1,userName);
-                select_login.setString(2,new String(password));
-                
-                
-               // System.out.println(userName);
-                //System.out.println(new String(password));
-                
-                
-                int exists=0;  
-                ResultSet rs;
-                rs=select_login.executeQuery();
-                
-                while(rs.next()){  exists=1;}
-                
-                if(exists==1) {
-                 System.out.println("User exists");
-                 dispose();
-                }
-                else {
-                 JOptionPane.showMessageDialog(this.getParent(),
-                      "User does not exist",
-                      "Login error",
-                      JOptionPane.ERROR_MESSAGE);
-                 System.out.println("User does not exist");
-                 return ;
-                }
-                
-      //<==============================================================================================================================> 
-                
-                con.close();  
-               }
-               catch(Exception e){ 
-                System.out.println(e);
-                }  
-                  
-              }
-              setVisible(false);
-              //dispose();
-    }
+    		    Class.forName("com.mysql.jdbc.Driver");  
+    		    Connection con=DriverManager.getConnection(  
+    		    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
+    		   
+    		    
+    		    
+//<=======================================C H E C K    L O G I N    C R E D E N T I A L S     ==================================>
+    		    
+    		    PreparedStatement select_login= null;
+    		    String selectQuery="select * from soft_eng_database.Registrations where reg_username = ? and reg_pass = ? ";
+    		    select_login = con.prepareStatement(selectQuery);
+    		    select_login.setString(1,userName);
+    		    select_login.setString(2,new String(password));
+    		    
+    		    
+    		   // System.out.println(userName);
+    		    //System.out.println(new String(password));
+    		    
+    		    
+    		    int exists=0;	 
+    		    ResultSet rs;
+    		    rs=select_login.executeQuery();
+    		    
+    		    while(rs.next()){  exists=1;}
+    		    
+    		    if(exists==1) {
+    		    	System.out.println("User exists");
+    		    	dispose();
+    		    }
+    		    else {
+    		    	JOptionPane.showMessageDialog(this.getParent(),
+    		    		    "User does not exist",
+    		    		    "Login error",
+    		    		    JOptionPane.ERROR_MESSAGE);
+    		    	System.out.println("User does not exist");
+    		    	return ;
+    		    }
+    		    
+//<==============================================================================================================================> 
+    		    
+    		    con.close();  
+    	    }
+    	    catch(Exception e){ 
+    	    	System.out.println(e);
+    	    	}  
+            
+        }
+        setVisible(false);
+        //dispose();
+    } // dialogDone()
 
     /**
      * This main() is provided for debugging purposes, to display a
@@ -564,6 +535,7 @@ public class AuthenticationSplash
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(false);
+
         AuthenticationSplash dialog = new AuthenticationSplash(frame, true);
         dialog.addWindowListener(new WindowAdapter()
         {
@@ -592,17 +564,4 @@ public class AuthenticationSplash
                 return passwordTextField;
         }
     }
-    private void callchangeFocus(final Component comp){
-    	changeFocus(this.getParent(),comp);
-    }
-    private void changeFocus(final Component source,
-    	      final Component target) {
-    	    SwingUtilities.invokeLater(new Runnable() {
-    	      public void run() {
-    	        target.dispatchEvent(
-    	          new FocusEvent(source, FocusEvent.FOCUS_GAINED));
-    	      }
-    	    });
-    	  }
-    
 } // class LoginSplash

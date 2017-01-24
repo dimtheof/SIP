@@ -62,9 +62,10 @@ public class RequestForwarding {
         AddressFactory addressFactory=proxy.getAddressFactory();
         //Get the parameters and the transport of the request URI
         URI requestURI=request.getRequestURI();
+        System.err.println("FORWARDING-REQUEST-URI"+requestURI);
         Iterator parametersNames=null;
         String transport=null;
-        System.out.println(requestURI.toString());
+       
         if(requestURI.isSipURI()){
         	parametersNames=((SipURI)requestURI).getParameterNames();
         	transport=((SipURI)requestURI).getTransportParam();
@@ -75,6 +76,7 @@ public class RequestForwarding {
             for (int i=0;i<targetsURIList.size();i++) {
                 
                 URI targetURI=(URI)targetsURIList.elementAt(i);
+                System.err.println("REQUEST-FORWARD-TARGET-URI:");
                 //Copy the parameters and the transport in the new Request URI 
                 //of the cloned Request
 /**************************************************************************/

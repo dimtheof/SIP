@@ -148,14 +148,14 @@ implements RegistrarAccess {
         
     	*/
     //<=================================== D  A T A B A S E     I N S T E A D     O F      X M L ======================>
-    	
+    	/*
     	try{  
 		    Class.forName("com.mysql.jdbc.Driver");  
 		    Connection con=DriverManager.getConnection(  
 		    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
 		    //here sonoo is database name, root is username and password  
 		    Statement stmt=con.createStatement();  
-		    ResultSet rs=stmt.executeQuery("select * from Registrations");  
+		    ResultSet rs=stmt.executeQuery("select * from Online_Users");  
 		    Registration registration;
 		    while(rs.next())  {
 		    	registration=new Registration();
@@ -177,7 +177,7 @@ implements RegistrarAccess {
 		    }
 	         e.printStackTrace();
 	    	} 
-  
+  	*/
     //<================================================================================================================>
     }
     

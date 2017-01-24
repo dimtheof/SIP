@@ -71,7 +71,7 @@ import net.java.sip.communicator.sip.event.*;
  * <p>Organisation: LSIIT laboratory (http://lsiit.u-strasbg.fr) </p>
  * <p>Network Research Team (http://www-r2.u-strasbg.fr))</p>
  * <p>Louis Pasteur University - Strasbourg - France</p>
- * @author Emil Ivov tkanel (http://www.emcho.com)
+ * @author Emil Ivov (http://www.emcho.com)
  * @version 1.1
  *
  */
