@@ -76,6 +76,29 @@ public class Billing_Server {
 				return null;
 			}
 			
+			public void setTcallee(Request request) throws SQLException{
+				
+				FromHeader frh = (FromHeader) request.getHeader(FromHeader.NAME);
+	            String caller = getUsernameFromHeader(frh);
+	            ToHeader toh = (ToHeader) request.getHeader(ToHeader.NAME);
+	            String callee = getUsernameFromHeader(toh);
+				try{
+					System.out.println("Setting new call info: "+caller+" -> "+callee);
+					Connection con=DriverManager.getConnection(  
+			          	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
+			    	PreparedStatement update_tcallee= null;
+			    	String Query="UPDATE soft_eng_database.Calls SET "
+			    			+ "Calls_tcallee = ? WHERE Calls_caller = ?";
+			    	update_tcallee = con.prepareStatement(Query);
+			    	update_tcallee.setString(1,callee);
+			    	update_tcallee.setString(2,caller);
+			    	update_tcallee.executeUpdate();
+				}
+				catch(SQLException e){
+					throw new IllegalStateException("SQLError!", e);
+				}
+			}
+			
 			public void Timer_start(Request request ){				
 				long tStart=	System.currentTimeMillis();
 				 FromHeader fr= (FromHeader) request.getHeader(FromHeader.NAME);
@@ -120,14 +143,13 @@ public class Billing_Server {
 				try{   
 					   
 				    PreparedStatement update_debt= null;
-				    String selectQuery="select Calls_caller,Calls_start_time from soft_eng_database.Calls where (Calls_caller = ? or Calls_caller = ?) and Calls_charge=1";
+				    String selectQuery="select Calls_caller,Calls_start_time from soft_eng_database.Calls where (Calls_caller = ? or Calls_caller = ?) and Calls_charge = 1";
 				    update_debt = con.prepareStatement(selectQuery);
 				    update_debt.setString(1,fromUsername);
 				    update_debt.setString(2,toUsername);
-				   // System.out.println(userName);
-				    //System.out.println(new String(password));
 				    ResultSet rs = update_debt.executeQuery();
-				    rs.next();
+				    if(!rs.next())
+				    	return;
 				    String caller = rs.getString(1);
 				    tStart = rs.getLong(2);
 				    long tEnd=	System.currentTimeMillis();

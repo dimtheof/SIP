@@ -16,11 +16,10 @@ import javax.swing.JOptionPane;
 
 public class Blocking_and_Forwarding {
 
-		private Vector usersWhoBlockedMe=new Vector();
-		private boolean i_am_blocked;
+		
 		private String caller;
 		private String callee;
-		private Vector forwUsers=new Vector();
+		private Vector<String> pathUsers = new Vector<String>();
 		
 		
 		public Blocking_and_Forwarding(Request request )
@@ -49,72 +48,125 @@ public class Blocking_and_Forwarding {
 					uriString.indexOf("@"));
 	}
 	
-		public String check_block(){   // R E T U R N      F I N A L    C A L L E E 
+		public boolean checkIfForwarding(String username) throws SQLException{
+			try{
+			Connection con=DriverManager.getConnection(  
+	          	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
+	          	    PreparedStatement stmt = null;
+	          	    String query="select * from soft_eng_database.Forwarding "
+	          	    		+ "where Username = ? ";
+	          	    stmt = con.prepareStatement(query);
+	          	    stmt.setString(1,username);
+	          	    ResultSet rs = stmt.executeQuery();
+	          	    if(rs.next()){
+	          	    	return true;
+	          	    }
+	          	    else
+	          	    	return false;
+			}
+			catch(SQLException e){
+				throw new IllegalStateException("SQLError!", e);
+			}
+		}
+		
+		public boolean checkIfBlocked(String blocker, String blocked) throws SQLException{
+			try{
+			Connection con=DriverManager.getConnection(  
+	          	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
+	          	    PreparedStatement stmt = null;
+	          	    String query="select * from soft_eng_database.Blocking "
+	          	    		+ "where Blocker = ? and Blocked = ?";
+	          	    stmt = con.prepareStatement(query);
+	          	    stmt.setString(1,blocker);
+	          	    stmt.setString(2,blocked);
+	          	    ResultSet rs = stmt.executeQuery();
+	          	    if(rs.next()){
+	          	    	return true;
+	          	    }
+	          	    else
+	          	    	return false;
+			}
+			catch(SQLException e){
+				throw new IllegalStateException("SQLError!", e);
+			}
+		}
+		
+		public String findFinalReceiver(String caller, String callee){   // R E T U R N      F I N A L    C A L L E E 
 			
-			try{  
-          	    //Class.forName("com.mysql.jdbc.Driver");  
+			try{    
           	    Connection con=DriverManager.getConnection(  
           	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
-          	    
-          	    PreparedStatement check_block= null;
-          	    String updateQuery="select * from Blocking where Blocked= ? ";
-          	    check_block = con.prepareStatement(updateQuery);
-          	    check_block.setString(1,caller);
-          	    
-          	    //check_block.setString(2,callee);
-          	    ResultSet rs;
-          	    rs=check_block.executeQuery();
-          	    i_am_blocked=false;
-          	    while(rs.next()){
-          	    	System.out.println(rs.getString(1));
-          	    	usersWhoBlockedMe.addElement(rs.getString(1));
-          	    	
+          	    if(checkIfBlocked(caller,callee) == true){
+          	    	return null;
+          	    }
+          	    else if(caller.equals(callee)){
+          	    	return "cycle_detected";
+          	    }
+          	    else if(checkIfForwarding(callee) == false){
+        	    	return callee;
+        	    }
+          	    else{
+          	    		int i = 0;
+          	    		PreparedStatement stmt = null;
+          	    		String query = null, newCallee = callee;
+          	    		ResultSet rs = null;
+          	    		pathUsers.clear();
+          	    		pathUsers.addElement(caller);
+          	    		pathUsers.addElement(callee);
+          	    		
+          	    	do{
+          	    		query = "select Forwarding_user from Forwarding where "
+          	    				+ "Username = ?";
+    	          	    stmt = con.prepareStatement(query);
+    	          	    stmt.setString(1,newCallee);
+    	          	    rs = stmt.executeQuery();
+        			    if(rs.next()){
+        			    	newCallee = rs.getString(1);
+        			    	System.err.println("newCallee = "+newCallee);
+        			    	if(pathUsers.contains(newCallee)){
+        			    		JOptionPane.showMessageDialog(null,
+        				    		    "Forwarding cycle exists.",
+        				    		    "Error",
+        				    		    JOptionPane.ERROR_MESSAGE);
+        			    		return "cycle_detected";
+        			    	}
+        			    	pathUsers.addElement(newCallee);
+        			    }
+        			    else break;
+        		    	
+        		    } while (++i<50);
+          	    	if(i < 50){
+          	    		return newCallee;
+          	    	}
+          	    	else
+          	    		return null;
           	    }
           	    
-          	    
-          	   // System.out.println(userName);
-          	    //System.out.println(new String(password));
-
-            
-            if(usersWhoBlockedMe.contains(callee)){
-
-            	return  null;
-            }
-            
-            int i = 0;
-		    do{
-		    	String query = "select Forwarding_user from Forwarding where Username = \""+callee+"\"";
-		    	Statement stmt = con.createStatement();
-			     rs = stmt.executeQuery(query);
-			    if(rs.next()){
-			    	callee = rs.getString(1);
-			    	System.out.println(callee);
-			    	if(usersWhoBlockedMe.contains(callee)){
-		            	return null;
-		            }
-			    	if(forwUsers.contains(callee)){
-			    		JOptionPane.showMessageDialog(null,
-				    		    "Cycle exists",
-				    		    "Error",
-				    		    JOptionPane.ERROR_MESSAGE);
-				    	System.out.println("User does not exist");
-			    		return "CYCLE";
-			    	}
-			    	forwUsers.addElement(callee);
-			    }
-			    else break;
-		    	
-		    } while (++i<50);
-		    if(i==50){
-		    	return null;
-		    }
-		    
-		  } catch (SQLException e) {
-		      throw new IllegalStateException("Cannot connect the database!", e);
+			 } catch (SQLException e) {
+		         throw new IllegalStateException("Cannot connect the database!", e);
+		       }		
 		}
-
-			return callee;
+		
+		public boolean amICaller(String username){
 			
+			try{
+				Connection con=DriverManager.getConnection(  
+		          	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
+		          	    PreparedStatement stmt = null;
+		          	    String query="select * from soft_eng_database.Calls "
+		          	    		+ "where Calls_caller = ? and Calls_charge = 1";
+		          	    stmt = con.prepareStatement(query);
+		          	    stmt.setString(1,username);
+		          	    ResultSet rs = stmt.executeQuery();
+		          	    if(rs.next()){
+		          	    	return true;
+		          	    }
+		          	    else
+		          	    	return false;
+				}
+				catch(SQLException e){
+					throw new IllegalStateException("SQLError!", e);
+				}
 			
 		}
 }
