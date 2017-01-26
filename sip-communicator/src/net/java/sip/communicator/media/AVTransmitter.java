@@ -286,8 +286,8 @@ class AVTransmitter
             if (!atLeastOneTrack) {
                 console.error(
                     "Couldn't set any of the tracks to a valid RTP format");
-                throw new MediaException(
-                    "Couldn't set any of the tracks to a valid RTP format");
+          //      throw new MediaException(
+          //          "Couldn't set any of the tracks to a valid RTP format");
             }
             // Realize the processor. This will internally create a flow
             // graph and attempt to create an output datasource
@@ -439,11 +439,11 @@ class AVTransmitter
                             + " encoded as " + pbss[i].getFormat().getEncoding()
                             + " @ [" + ipAddress + "]:" + port + "!");
                     }
-                    mediaManCallback.fireNonFatalMediaError(
-                        new MediaException(
-                        "Failed to initialise rtp manager for track " + i
-                        + " encoded as " + pbss[i].getFormat().getEncoding()
-                        + " @ [" + ipAddress + "]:" + port + "!"));
+  //                  mediaManCallback.fireNonFatalMediaError(
+  //                      new MediaException(
+  //                      "Failed to initialise rtp manager for track " + i
+  //                      + " encoded as " + pbss[i].getFormat().getEncoding()
+  //                      + " @ [" + ipAddress + "]:" + port + "!"));
                     continue;
                 }
                 if(createdRtpManager)
@@ -461,8 +461,8 @@ class AVTransmitter
                 catch (Exception ex) {
                     console.error("Session " + i +
                                   " failed to start transmitting.");
-                    throw new MediaException(
-                        "Session " + i + " failed to start transmitting.");
+              //      throw new MediaException(
+              //          "Session " + i + " failed to start transmitting.");
                 }
             }
         }

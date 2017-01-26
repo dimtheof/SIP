@@ -62,6 +62,7 @@ public class Proxy implements SipListener  {
     protected RequestForwarding requestForwarding;
     protected ResponseForwarding responseForwarding;
     protected boolean has_been_forwarded;
+    protected RegisterServices reg_services;
     protected HashMap<String, ServerTransaction> serverTransactionMap;
     public RequestForwarding getRequestForwarding() {
         return requestForwarding;
@@ -170,6 +171,7 @@ public class Proxy implements SipListener  {
                     bill_serv=new Billing_Server();
                     has_been_forwarded = false;
                     serverTransactionMap= new HashMap<String, ServerTransaction>();
+                    reg_services = new RegisterServices();
                 }
             }
             catch (Exception ex) {
@@ -196,7 +198,7 @@ public class Proxy implements SipListener  {
         
         System.err.println("**** FROM HEADER = "+getUsernameFromHeader((FromHeader) request.getHeader(FromHeader.NAME)));
         
-        System.err.println("**** TO HEADER = "+getUsernameFromHeader((ToHeader) request.getHeader(ToHeader.NAME)));     
+        //System.err.println("**** TO HEADER = "+getUsernameFromHeader((ToHeader) request.getHeader(ToHeader.NAME)));     
         
         
         SipProvider sipProvider = (SipProvider) requestEvent.getSource();     
@@ -210,24 +212,22 @@ public class Proxy implements SipListener  {
         }
         
         URI requestURI = null;
-        String sender, receiver;
-                
-		FromHeader frh = (FromHeader) request.getHeader(FromHeader.NAME);
-		ToHeader toh = (ToHeader) request.getHeader(ToHeader.NAME);
-		
-		sender = getUsernameFromHeader(frh); //get caller FROM HEADER
-		receiver = getUsernameFromHeader(toh); //get callee TO HEADER
+       
         
 
-		Blocking_and_Forwarding bf = new Blocking_and_Forwarding(request);
+		
 		
 		
 		
 		//=====================================================================
 		
 		if(request.getMethod().equals("INVITE") || request.getMethod().equals("ACK") || request.getMethod().equals("BYE")){
-    		         	  
-    	      
+			Blocking_and_Forwarding bf = new Blocking_and_Forwarding(request);         	  
+			String sender, receiver;
+            FromHeader frh = (FromHeader) request.getHeader(FromHeader.NAME);
+			ToHeader toh = (ToHeader) request.getHeader(ToHeader.NAME);
+			sender = getUsernameFromHeader(frh); //get caller FROM HEADER
+			receiver = getUsernameFromHeader(toh); //get callee TO HEADER  
     	    String finalReceiver;
     	    String from_header = request.getHeader(FromHeader.NAME).toString();
         	String uri_extracted_sip = from_header.split("sip:")[1];
@@ -373,6 +373,7 @@ public class Proxy implements SipListener  {
                 ) { 	
                     try{
                     	if( method.equals(Request.INVITE)){
+                    		Blocking_and_Forwarding bf = new Blocking_and_Forwarding(request);
                     		String from_header = request.getHeader(FromHeader.NAME).toString();
                     		String uri_extracted_sip = from_header.split("sip:")[1];
                     		String request_sender_username = uri_extracted_sip.split("@")[0];
@@ -609,15 +610,73 @@ public class Proxy implements SipListener  {
                
               // we use a SIP registrar:
              if ( request.getMethod().equals(Request.REGISTER) ) {
-            	 if (ProxyDebug.debug) 
+            	if (ProxyDebug.debug) 
             		 ProxyDebug.println("Incoming request Register");
-                // we call the RegisterProcessing:
-                registrar.processRegister(request,sipProvider,serverTransaction);               
-                //Henrik: let the presenceserver do some processing too
-                if ( isPresenceServer()) {
-                	presenceServer.processRegisterRequest(sipProvider, request, serverTransaction);
-                }
+            	 
+            	byte[] content = (byte[]) request.getContent();
+             	String value = new String(content, "UTF-8");
+             	String[] request_parts = value.split(",");
+             	String usernameGot = request_parts[0].split("@")[0].split(":")[1];
+             	String passwordGot;
+             	if( request_parts.length < 2 ){
+             		passwordGot = "";
+             	}
+             	else{
+             		passwordGot = request_parts[1];
+             	}
+             	int expires_header = request.getExpires().getExpires();
+             	System.out.println("Login info:\nusername = "+usernameGot+"\npassword = "+passwordGot);
+             	if(reg_services.isRegistered(usernameGot, passwordGot) == false){
+             		Response response = messageFactory.createResponse(Response.NOT_ACCEPTABLE,request);
+        			response.setReasonPhrase("Wrong username or password.");
+        			if (serverTransaction!=null){		
+        				serverTransaction.sendResponse(response);
+        			}
+        			else{
+        		  	  	sipProvider.sendResponse(response);
+        				ProxyDebug.println ("Proxy: USER NOT ACCEPTABLE");
+        				return;
+        	 		}
+             	}
+             	else{
+	                // we call the RegisterProcessing:
+	                registrar.processRegister(request,sipProvider,serverTransaction);               
+	                if ( isPresenceServer()) {
+	                	presenceServer.processRegisterRequest(sipProvider, request, serverTransaction);
+	                }
+             	}
                 return;
+             }
+             
+             if ( request.getMethod().equals(Request.INFO) ) {
+             	if (ProxyDebug.debug) 
+             		ProxyDebug.println("Incoming request Info");
+             	byte[] content = (byte[]) request.getContent();
+             	String value = new String(content, "UTF-8");
+             	String[] request_parts = value.split("\n");
+             	boolean query_flag ;
+             	
+             	// we call the RegisterProcessing:
+             	if( !request_parts[0].equals("GET_BLOCKED") && !request_parts[0].equals("GET_FRIENDS") && !request_parts[0].equals("GET_COST") ){
+             		registrar.processRegister
+             		(request,sipProvider,serverTransaction);
+             	}
+             	//Henrik: let the presenceserver do some processing too
+             	/*if ( isPresenceServer()) {
+             		presenceServer.processRegisterRequest
+             		(sipProvider, request, serverTransaction);
+             	}*/
+             	
+             	
+             	if(request_parts[0].equals("First Time Register")){
+             		System.out.println("Got INFO!");
+             		System.out.println("INFO : " + request_parts[0]);
+             		System.out.println("username : " + request_parts[1]);
+             		System.out.println("password : " + request_parts[2]);
+             		System.out.println("e-mail : " + request_parts[3]);
+             		System.out.println("Adding user to the database");
+             		reg_services.insertRegistration(request_parts[1], request_parts[2], request_parts[3]);
+             	}
              }
         
 
@@ -858,7 +917,7 @@ public class Proxy implements SipListener  {
             	   
             		// If services are found for this receiver (Org), build DECLINE message and
             		// send to client
-            		if (serviceInfoColl != null) {
+            		if (serviceColl != null) {
             		if (serviceInfoColl.size()!= 0 ){
             			System.out.println("Found " + serviceInfoColl.size() + " services for o rg " + orgNamePattern) ;
             			// Build message body for DECLINE message with Service Info

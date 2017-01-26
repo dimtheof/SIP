@@ -57,6 +57,7 @@
  */
 package net.java.sip.communicator.sip;
 
+import java.nio.charset.Charset;
 import java.text.*;
 import java.util.*;
 import javax.sip.*;
@@ -206,7 +207,7 @@ class RegisterProcessing
 
 
     synchronized void register(String registrarAddress, int registrarPort,
-                  String registrarTransport, int expires) throws
+                  String registrarTransport, int expires, String reg_Username, String reg_Password) throws
          CommunicationsException
     {
         try
@@ -289,12 +290,17 @@ class RegisterProcessing
             //Request
             Request request = null;
             try {
+            	ContentTypeHeader contentTypeHeader = sipManCallback.headerFactory.createContentTypeHeader("text", "plain");
+        		String content = reg_Username  + "," + reg_Password;
+        		byte[] messageBody = content.getBytes(Charset.forName("UTF-8"));
                 request = sipManCallback.messageFactory.createRequest(requestURI,
                     Request.REGISTER,
                     callIdHeader,
                     cSeqHeader, fromHeader, toHeader,
                     viaHeaders,
-                    maxForwardsHeader);
+                    maxForwardsHeader,
+                    contentTypeHeader,
+                    messageBody);
             }
             catch (ParseException ex) {
                 console.error("Could not create the register request!", ex);
@@ -477,7 +483,7 @@ class RegisterProcessing
                 try {
                     if(isRegistered())
                     register(registrarAddress, registrarPort, transport,
-                             expires);
+                             expires, null, null);
                 }
                 catch (CommunicationsException ex) {
                     console.error("Failed to reRegister", ex);
@@ -528,6 +534,153 @@ class RegisterProcessing
         {
             console.logExit();
         }
+    }
+    
+    synchronized void firstTimeRegister(String RegistrarAddress,
+    		String username, String password, String email) throws
+    CommunicationsException
+    {
+    	try
+    	{
+    		console.logEntry();
+
+
+    		String defaultDomainName =
+    				Utils.getProperty("net.java.sip.communicator.sip.DEFAULT_DOMAIN_NAME");
+
+    		//Request URI
+    		URI requestURI;
+    		try {
+    			requestURI = sipManCallback.addressFactory.createSipURI(null,RegistrarAddress);
+    		}
+    		catch (ParseException ex) {
+    			console.error(RegistrarAddress + " is not a legal SIP uri!", ex);
+    			throw new CommunicationsException(RegistrarAddress +
+    					" is not a legal SIP uri!", ex);
+    		}
+
+    		CallIdHeader callIdHeader = sipManCallback.sipProvider.getNewCallId();
+
+    		CSeqHeader cSeqHeader;
+    		try {
+    			cSeqHeader = sipManCallback.headerFactory.createCSeqHeader(1,
+    					Request.INFO);
+    		}
+    		catch (ParseException ex) {
+    			//Shouldn't happen
+    			console.error(ex, ex);
+    			throw new CommunicationsException(
+    					"An unexpected erro occurred while"
+    							+ "constructing the CSeqHeadder", ex);
+    		}
+    		catch (InvalidArgumentException ex) {
+    			//Shouldn't happen
+    			console.error(
+    					"An unexpected erro occurred while"
+    							+ "constructing the CSeqHeadder", ex);
+    			throw new CommunicationsException(
+    					"An unexpected erro occurred while"
+    							+ "constructing the CSeqHeadder", ex);
+    		}
+    		//FromHeader
+    		FromHeader fromHeader = sipManCallback.getFromHeader();
+    		//ToHeader
+    		Address toAddress = sipManCallback.addressFactory.createAddress(
+    				requestURI);
+    		ToHeader toHeader;
+    		try {
+    			toHeader = sipManCallback.headerFactory.createToHeader(
+    					toAddress, null);
+    		}
+    		catch (ParseException ex) {
+    			//Shouldn't happen
+    			console.error(
+    					"Null is not an allowed tag for the to header!", ex);
+    			throw new CommunicationsException(
+    					"Null is not an allowed tag for the to header!", ex);
+    		}
+    		//ViaHeaders
+    		ArrayList viaHeaders = sipManCallback.getLocalViaHeaders();
+    		//MaxForwards
+    		MaxForwardsHeader maxForwards = sipManCallback.getMaxForwardsHeader();
+    		//Contact
+    		ContactHeader contactHeader = sipManCallback.getContactHeader();
+    		Request info = null;
+    		try {
+    			info = sipManCallback.messageFactory.createRequest(requestURI,
+    					Request.INFO,
+    					callIdHeader, cSeqHeader, fromHeader, toHeader, viaHeaders,
+    					maxForwards);
+    		}
+    		catch (ParseException ex) {
+    			console.error(
+    					"Failed to create info Request!", ex);
+    			throw new CommunicationsException(
+    					"Failed to create info Request!", ex);
+    		}
+    		//
+    		info.addHeader(contactHeader);
+    		
+    		//Content
+    		ContentTypeHeader contentTypeHeader = null;
+    		try {
+    			contentTypeHeader =
+    					sipManCallback.headerFactory.createContentTypeHeader(
+    							"text", "plain");
+    		}
+    		catch (ParseException ex) {
+    			//Shouldn't happen
+    			console.error(
+    					"Failed to create a content type header for the INFO request",
+    					ex);
+    			throw new CommunicationsException(
+    					"Failed to create a content type header for the INFO request",
+    					ex);
+    		}
+    		//Creating Message Body
+    		try {
+    			String body = "First Time Register\n" + username + "\n" + password + 
+    					"\n" + email + "\n";
+    			byte[] messageBody = body.getBytes(Charset.forName("UTF-8"));
+    			info.setContent(messageBody, contentTypeHeader);
+    		}
+    		catch (ParseException ex) {
+    			console.error(
+    					"Failed to parse registration data while creating info request!", ex);
+    			throw new CommunicationsException(
+    					"Failed to parse registration data while creating info request!", ex);
+    		}
+    		//Transaction
+    		ClientTransaction infoTransaction;
+    		try {
+    			infoTransaction = sipManCallback.sipProvider.
+    					getNewClientTransaction(info);
+    		}
+    		catch (TransactionUnavailableException ex) {
+    			console.error(
+    					"Failed to create infoTransaction.\n" +
+    							"This is most probably a network connection error.", ex);
+    			throw new CommunicationsException(
+    					"Failed to create infoTransaction.\n" +
+    							"This is most probably a network connection error.", ex);
+    		}
+    		try {
+    			infoTransaction.sendRequest();
+    			if( console.isDebugEnabled() )
+    				console.debug("sent request: " + info);
+    		}
+    		catch (SipException ex) {
+    			console.error(
+    					"An error occurred while sending info request", ex);
+    			throw new CommunicationsException(
+    					"An error occurred while sending info request", ex);
+    		}
+    	}
+    	finally
+    	{
+    		console.logExit();
+    	}
+
     }
 
 }

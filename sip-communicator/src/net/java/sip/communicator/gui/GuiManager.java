@@ -72,6 +72,7 @@ import java.io.*;
 import net.java.sip.communicator.media.JMFRegistry;
 import net.java.sip.communicator.plugin.setup.*;
 import net.java.sip.communicator.gui.imp.*;
+import net.java.sip.communicator.sip.SipManager;
 import net.java.sip.communicator.sip.simple.event.*;
 
 /**
@@ -662,11 +663,11 @@ public class GuiManager
 
     public void requestAuthentication(String realm,
                                       String userName,
-                                      char[] password)
+                                      char[] password, SipManager sipmanager)
     {
         if (authenticationSplash != null)
             authenticationSplash.dispose();
-        authenticationSplash = new AuthenticationSplash(phoneFrame, true);
+        authenticationSplash = new AuthenticationSplash(phoneFrame, true, sipmanager);
         if(userName != null)
             authenticationSplash.userNameTextField.setText(userName);
         if(password != null)

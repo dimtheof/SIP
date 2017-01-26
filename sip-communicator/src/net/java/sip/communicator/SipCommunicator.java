@@ -921,7 +921,8 @@ public class SipCommunicator
 
             guiManager.requestAuthentication(realm,
                                              defaultValues.getUserName(),
-                                             defaultValues.getPassword());
+                                             defaultValues.getPassword(),
+                                             sipManager);
 
             UserCredentials credentials = new UserCredentials();
 

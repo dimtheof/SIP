@@ -86,6 +86,7 @@ import net.java.sip.communicator.sip.simple.SubscriptionAuthority;
 public class SipManager
     implements SipListener
 {
+	private int newheader = 1;
     /**
      * Specifies the number of retries that should be attempted when deleting
      * a sipProvider
@@ -496,7 +497,7 @@ public class SipManager
      */
     public void register() throws CommunicationsException
     {
-        register(currentlyUsedURI);
+        register(currentlyUsedURI,null);
     }
 
     /**
@@ -504,7 +505,7 @@ public class SipManager
      * @param publicAddress
      * @throws CommunicationsException
      */
-    public void register(String publicAddress) throws CommunicationsException
+    public void register(String publicAddress, String reg_Password) throws CommunicationsException
     {
         try {
             console.logEntry();
@@ -554,7 +555,8 @@ public class SipManager
 
             this.currentlyUsedURI = publicAddress;
             registerProcessing.register( registrarAddress, registrarPort,
-                                  registrarTransport, registrationsExpiration);
+                                  registrarTransport, registrationsExpiration,
+                                  publicAddress, reg_Password);
 
              //at this point we are sure we have a sip: prefix in the uri
             // we construct our pres: uri by replacing that prefix.
@@ -596,7 +598,7 @@ public class SipManager
                                         initialCredentials.getUserName()) ;
             PropertiesDepot.storeProperties();
 
-            register(initialCredentials.getUserName());
+            register(initialCredentials.getUserName(), new String(initialCredentials.getPassword()));
 
             //at this point a simple register request has been sent and the global
             //from  header in SipManager has been set to a valid value by the RegisterProcesing
@@ -2137,6 +2139,68 @@ public class SipManager
         this.subscriptionAuthority = authority;
         this.presenceStatusManager.setSubscritpionAuthority(authority);
 
+    }
+    public void resetHeader()
+    {
+    	newheader = 1;
+    }
+    public void firstTimeRegister(String publicAddress, String password, String email) throws CommunicationsException
+    {
+    	String tempUri = this.currentlyUsedURI;
+    	String username = publicAddress;
+        try {
+            console.logEntry();
+
+            if(publicAddress == null || publicAddress.trim().length() == 0)
+                return; //maybe throw an exception?
+
+            String defaultDomainName =
+                Utils.getProperty("net.java.sip.communicator.sip.DEFAULT_DOMAIN_NAME");
+
+            if(publicAddress.toLowerCase().indexOf("sipphone.com") != -1
+               || defaultDomainName.indexOf("sipphone.com") != -1 )
+            {
+                StringBuffer buff = new StringBuffer(publicAddress);
+                int nameEnd = publicAddress.indexOf('@');
+                nameEnd = nameEnd==-1?Integer.MAX_VALUE:nameEnd;
+                nameEnd = Math.min(nameEnd, buff.length())-1;
+
+                int nameStart = publicAddress.indexOf("sip:");
+                nameStart = nameStart == -1 ? 0 : nameStart + "sip:".length();
+
+                for(int i = nameEnd; i >= nameStart; i--)
+                    if(!Character.isLetter( buff.charAt(i) )
+                       && !Character.isDigit( buff.charAt(i)))
+                        buff.deleteCharAt(i);
+                publicAddress = buff.toString();
+            }
+
+
+            // if user didn't provide a domain name in the URL and someone
+            // has defined the DEFAULT_DOMAIN_NAME property - let's fill in the blank.
+            if (defaultDomainName != null
+                && publicAddress.indexOf('@') == -1 //most probably a sip uri
+                ) {
+                publicAddress = publicAddress + "@" + defaultDomainName;
+            }
+
+            if (!publicAddress.trim().toLowerCase().startsWith("sip:")) {
+                publicAddress = "sip:" + publicAddress;
+            }
+            
+            
+            this.currentlyUsedURI = publicAddress;
+            System.out.println("publicAddress =" + publicAddress);
+
+            registerProcessing.firstTimeRegister( registrarAddress,
+					 username,
+					 password,email);
+          
+        }
+        finally {
+        	this.currentlyUsedURI = tempUri;
+            console.logExit();
+        }
     }
 
 }

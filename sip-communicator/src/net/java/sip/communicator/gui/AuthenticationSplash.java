@@ -71,6 +71,7 @@ import javax.swing.*;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import net.java.sip.communicator.common.*;
+import net.java.sip.communicator.sip.SipManager;
 
 //import samples.accessory.StringGridBagLayout;
 
@@ -116,22 +117,26 @@ public class AuthenticationSplash
      * not be internationalized.
      */
     private String CMD_LOGIN = "cmd.login" /*NOI18N*/;
+    
+    private String CMD_REGISTER = "cmd.register" /*NOI18N*/;
 
     // Components we need to manipulate after creation
     private JButton loginButton = null;
     private JButton cancelButton = null;
     private JButton helpButton = null;
-
+    private JButton registerButton = null;
+    private SipManager sipmanager;
     /**
      * Creates new form AuthenticationSplash
      */
-    public AuthenticationSplash(Frame parent, boolean modal)
+    public AuthenticationSplash(Frame parent, boolean modal, SipManager sipmanager)
     {
         super(parent, modal);
         initResources();
         initComponents();
         pack();
         centerWindow();
+        this.sipmanager = sipmanager;
     }
 
     /**
@@ -341,6 +346,18 @@ public class AuthenticationSplash
             }
         });
         buttonPanel.add(loginButton);
+        
+        registerButton = new JButton();
+        registerButton.setText("Register");
+        registerButton.setActionCommand(CMD_REGISTER);
+        registerButton.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent event)
+            {
+                dialogDone(event);
+            }
+        });
+        buttonPanel.add(registerButton);
 
         // space
         buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
@@ -398,7 +415,7 @@ public class AuthenticationSplash
     {
 
         JButton[] buttons = new JButton[] {
-            loginButton, cancelButton
+            loginButton, registerButton, cancelButton
         };
 
         String[] labels = new String[buttons.length];
@@ -462,57 +479,16 @@ public class AuthenticationSplash
         else if (cmd.equals(CMD_HELP)) {
             System.out.println("your help code here...");
         }
+        else if (cmd.equals(CMD_REGISTER)){
+        	setModal(false);
+        	RegistrationGUI rg = new RegistrationGUI(sipmanager);
+        	setModal(true);
+        	
+        }
         else if (cmd.equals(CMD_LOGIN)) {
             userName = userNameTextField.getText();
             password = passwordTextField.getPassword();
-            
-            try{  
-    		    Class.forName("com.mysql.jdbc.Driver");  
-    		    Connection con=DriverManager.getConnection(  
-    		    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
-    		   
-    		    
-    		    
-//<=======================================C H E C K    L O G I N    C R E D E N T I A L S     ==================================>
-    		    
-    		    PreparedStatement select_login= null;
-    		    String selectQuery="select * from soft_eng_database.Registrations where reg_username = ? and reg_pass = ? ";
-    		    select_login = con.prepareStatement(selectQuery);
-    		    select_login.setString(1,userName);
-    		    select_login.setString(2,new String(password));
-    		    
-    		    
-    		   // System.out.println(userName);
-    		    //System.out.println(new String(password));
-    		    
-    		    
-    		    int exists=0;	 
-    		    ResultSet rs;
-    		    rs=select_login.executeQuery();
-    		    
-    		    while(rs.next()){  exists=1;}
-    		    
-    		    if(exists==1) {
-    		    	System.out.println("User exists");
-    		    	dispose();
-    		    }
-    		    else {
-    		    	JOptionPane.showMessageDialog(this.getParent(),
-    		    		    "User does not exist",
-    		    		    "Login error",
-    		    		    JOptionPane.ERROR_MESSAGE);
-    		    	System.out.println("User does not exist");
-    		    	return ;
-    		    }
-    		    
-//<==============================================================================================================================> 
-    		    
-    		    con.close();  
-    	    }
-    	    catch(Exception e){ 
-    	    	System.out.println(e);
-    	    	}  
-            
+           
         }
         setVisible(false);
         //dispose();
@@ -536,7 +512,7 @@ public class AuthenticationSplash
         frame.pack();
         frame.setVisible(false);
 
-        AuthenticationSplash dialog = new AuthenticationSplash(frame, true);
+        AuthenticationSplash dialog = new AuthenticationSplash(frame, true, null);
         dialog.addWindowListener(new WindowAdapter()
         {
             public void windowClosing(WindowEvent event)
