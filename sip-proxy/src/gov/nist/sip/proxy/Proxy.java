@@ -63,6 +63,7 @@ public class Proxy implements SipListener  {
     protected ResponseForwarding responseForwarding;
     protected boolean has_been_forwarded;
     protected RegisterServices reg_services;
+    protected BlockingService blservice;
     protected HashMap<String, ServerTransaction> serverTransactionMap;
     public RequestForwarding getRequestForwarding() {
         return requestForwarding;
@@ -172,6 +173,7 @@ public class Proxy implements SipListener  {
                     has_been_forwarded = false;
                     serverTransactionMap= new HashMap<String, ServerTransaction>();
                     reg_services = new RegisterServices();
+                    blservice=new BlockingService();
                 }
             }
             catch (Exception ex) {
@@ -242,7 +244,7 @@ public class Proxy implements SipListener  {
         	String final_piece_uri = uri_extracted_sip.split("@")[1];
         	requestURI = request.getRequestURI();
     		has_been_forwarded = false;
-        	
+    		
         	try{
 	    	    if(bf.checkIfBlocked(sender, receiver) == true){
 	    	    	finalReceiver = null;
@@ -270,6 +272,14 @@ public class Proxy implements SipListener  {
 	    	    }
 	    	    else if(bf.checkIfBlocked(sender, finalReceiver) == true){
 	    	    	finalReceiver = null;
+	    	    }
+	    	    if(finalReceiver== null){
+	    	    	Response response=messageFactory.createResponse
+	    	                (Response.FORBIDDEN,request);
+	    	    	response.setReasonPhrase("You have been blocked");
+	    	                if (serverTransaction!=null)
+	    	                       serverTransaction.sendResponse(response);
+	    	                else sipProvider.sendResponse(response);
 	    	    }
 	    	    
 	    	    
@@ -381,7 +391,7 @@ public class Proxy implements SipListener  {
                     		String temp_uri = request.getHeader(ToHeader.NAME).toString();
                     		uri_extracted_sip = temp_uri.split("sip:")[1];
                     		String request_receiver_username = uri_extracted_sip.split("@")[0];
-                    		if( bf.checkIfBlocked(request_sender_username, request_receiver_username) ){
+                    		if( bf.checkIfBlocked(request_receiver_username,request_sender_username ) ){
                     			Response response = messageFactory.createResponse(480,request);
                     			response.setReasonPhrase("The other user is temporarily anavailable");
                     			if (serverTransaction!=null)		
@@ -657,10 +667,10 @@ public class Proxy implements SipListener  {
              	boolean query_flag ;
              	
              	// we call the RegisterProcessing:
-             	if( !request_parts[0].equals("GET_BLOCKED") && !request_parts[0].equals("GET_FRIENDS") && !request_parts[0].equals("GET_COST") ){
+             	/*if( !request_parts[0].equals("GET_BLOCKED") && !request_parts[0].equals("GET_FRIENDS") && !request_parts[0].equals("GET_COST") ){
              		registrar.processRegister
              		(request,sipProvider,serverTransaction);
-             	}
+             	}*/
              	//Henrik: let the presenceserver do some processing too
              	/*if ( isPresenceServer()) {
              		presenceServer.processRegisterRequest
@@ -677,6 +687,69 @@ public class Proxy implements SipListener  {
              		System.out.println("Adding user to the database");
              		reg_services.insertRegistration(request_parts[1], request_parts[2], request_parts[3]);
              	}
+             	else if(request_parts[0].equals("Get Blocked")){
+         
+             		String from_header = request.getHeader(FromHeader.NAME).toString();
+            		String uri_extracted_sip = from_header.split("sip:")[1];
+            		String request_sender_username = uri_extracted_sip.split("@")[0];
+            		
+            		System.out.println("Got INFO!");
+            		System.out.println("INFO : " + request_parts[0]);
+            		System.out.println("sender : " + request_sender_username);
+            		
+            		Vector<String> blocked1 = blservice.getBlocked_and_unBlocked(request_sender_username);
+            		String[] blocked=(String[]) blocked1.toArray(new String[blocked1.size()]);
+            		String blocked_users_content;
+            		if( blocked.length == 0 ){
+            			blocked_users_content = "none";
+            		}
+            		else{
+            			blocked_users_content = "";
+            			for(int i = 0; i < blocked.length; i++){
+            				if(i != blocked.length - 1 )
+            					blocked_users_content = blocked_users_content + blocked[i] + ",";
+            				else
+            					blocked_users_content = blocked_users_content + blocked[i];
+            			}
+            		}
+            		Response response = messageFactory.createResponse(201,request);
+        			response.setReasonPhrase(blocked_users_content);
+        			if (serverTransaction!=null)		
+        				serverTransaction.sendResponse(response);
+        			else{
+        		  	  	sipProvider.sendResponse(response);
+        				ProxyDebug.println ("Proxy: Blocked users were sent back. Responded 201");
+        				return;
+        				}
+             		
+             		
+             	}
+             	else if(request_parts[0].equals("Add Blocked")){
+                    
+             		String from_header = request.getHeader(FromHeader.NAME).toString();
+            		String uri_extracted_sip = from_header.split("sip:")[1];
+            		String request_sender_username = uri_extracted_sip.split("@")[0];
+            		String blocked;
+            		System.out.println("Got INFO!");
+            		System.out.println("INFO : " + request_parts[0]);
+            		System.out.println("sender : " + request_sender_username);
+            		System.out.println("blocked : " + request_parts[2]);      		
+            		blservice.block(request_sender_username,request_parts[2]);
+            		Response response = messageFactory.createResponse(202,request);
+        			if (serverTransaction!=null)		
+        				serverTransaction.sendResponse(response);
+        			else{
+        		  	  	sipProvider.sendResponse(response);
+        				ProxyDebug.println ("Proxy: Blocked users were sent back. Responded 201");
+        				return;
+        				}
+             		
+             		
+             	}
+             	
+             	
+             	
+             	
              }
         
 

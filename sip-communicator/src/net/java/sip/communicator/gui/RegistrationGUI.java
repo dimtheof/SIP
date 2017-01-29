@@ -26,8 +26,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
-import com.mysql.jdbc.CommunicationsException;
-import com.mysql.jdbc.PreparedStatement;
+
 
 import net.java.sip.communicator.common.Console;
 import net.java.sip.communicator.sip.SipManager;
@@ -63,7 +62,12 @@ public class RegistrationGUI extends JDialog{
 			this.toFront();
 			this.sipmanager = sipmanager;
 		}
-
+		public void disappear(){
+			setVisible(false);
+			setModal(false);
+			dispose();
+			
+		}
 		/**
 		 * Initialize the contents of the frame.
 		 */
@@ -159,8 +163,7 @@ public class RegistrationGUI extends JDialog{
 						e.printStackTrace();
 					}
 					
-					setVisible(false);
-					dispose();
+					disappear();
 					
 					/*
 					String url = "jdbc:mysql://localhost:3306/soft_eng_database";

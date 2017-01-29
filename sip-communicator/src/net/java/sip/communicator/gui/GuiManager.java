@@ -61,6 +61,7 @@ import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+
 import net.java.sip.communicator.common.*;
 import net.java.sip.communicator.common.Console;
 import net.java.sip.communicator.gui.event.*;
@@ -72,6 +73,7 @@ import java.io.*;
 import net.java.sip.communicator.media.JMFRegistry;
 import net.java.sip.communicator.plugin.setup.*;
 import net.java.sip.communicator.gui.imp.*;
+import net.java.sip.communicator.sip.CommunicationsException;
 import net.java.sip.communicator.sip.SipManager;
 import net.java.sip.communicator.sip.simple.event.*;
 
@@ -98,17 +100,17 @@ public class GuiManager
 
     public static final String PHONE_UI_MODE = "PhoneUiMode";
     public static final String IM_UI_MODE    = "ImUiMode";
-
+    
     static{
         initLookAndFeel();
     }
-
+    public  BlockGui 		 block        =null;
     private PhoneFrame       phoneFrame   = null;
     private ContactListFrame contactList  = null;
     private ConfigFrame      configFrame  = null;
     private ArrayList        listeners    = null;
     private AlertManager     alertManager = null;
-
+    private SipManager manager;
 /** @todo remove after testing */
 //    private Properties      properties;
     private JPanel          logoPanel    = null;
@@ -123,8 +125,9 @@ public class GuiManager
 
     static boolean isThisSipphoneAnywhere = false;
 
-    public GuiManager()
+    public GuiManager(SipManager sipmanager)
     {
+    	this.manager=sipmanager;
         String isSipphone = Utils.getProperty("net.java.sip.communicator.sipphone.IS_RUNNING_SIPPHONE");
         if(isSipphone != null && isSipphone.equalsIgnoreCase("true"))
             isThisSipphoneAnywhere = true;
@@ -147,7 +150,11 @@ public class GuiManager
         ConfigAction configAction = new ConfigAction();
         ( (MenuBar) phoneFrame.jMenuBar1).addConfigCallAction(configAction);
         contactList.menuBar.addConfigAction(configAction);
-
+        
+        BlockAction blockAction = new BlockAction();
+        ( (MenuBar) phoneFrame.jMenuBar1).addConfigCallAction(blockAction);
+        contactList.menuBar.addConfigAction(configAction);
+        
         ConfigMediaAction configMediaAction = new ConfigMediaAction();
         ( (MenuBar) phoneFrame.jMenuBar1).addConfigMediaAction(configMediaAction);
         contactList.menuBar.addConfigMediaAction(configMediaAction);
@@ -534,7 +541,30 @@ public class GuiManager
             showConfigFrame();
         }
     }
-
+    private class BlockAction
+    extends AbstractAction
+    {
+	    public BlockAction()
+	    {
+	        super("Check Blocked");
+	    }
+	
+	    public void actionPerformed(ActionEvent evt)
+	    {
+	    	JFrame f = new JFrame("Blocking Menu");
+		    f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	         block=new BlockGui(manager,getAuthenticationUserName());
+	            f.getContentPane().add(block, BorderLayout.CENTER);
+			    f.setSize(400, 300);
+			    f.setVisible(true);
+	        try {
+				manager.getBlocked(getAuthenticationUserName());
+			} catch (CommunicationsException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    }
+    }
     private class ConfigMediaAction
         extends AbstractAction
     {

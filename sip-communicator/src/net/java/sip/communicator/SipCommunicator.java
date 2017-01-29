@@ -119,9 +119,10 @@ public class SipCommunicator
 
             loadProperties();
 
-            guiManager = new GuiManager();
+            
             mediaManager = new MediaManager();
             sipManager = new SipManager();
+            guiManager = new GuiManager(sipManager);
             simpleContactList = new SimpleContactList();
 
             guiManager.addUserActionListener(this);
@@ -1092,4 +1093,25 @@ public class SipCommunicator
 
         return SubscriptionAuthorizationResponse.createResponse(response);
     }
+
+	
+
+
+	@Override
+	public void BlockedReceivedList(BlockedEvent evt) {
+		int flag=0;
+		String temp;
+		System.err.println(evt.getVector().firstElement());
+		Iterator<String> itr=evt.getVector().iterator();
+		  while(itr.hasNext()){
+			  temp=itr.next();
+			  if(temp.equals("next")){flag=1; continue;}
+			  if(flag==1)guiManager.block.addDestinationElements(new String[]{(temp)});
+			  else guiManager.block.addSourceElements(new String[]{(temp)});
+		      System.out.println(temp + " ");
+		   }
+		  return;
+		// TODO Auto-generated method stub
+		
+	}
 }

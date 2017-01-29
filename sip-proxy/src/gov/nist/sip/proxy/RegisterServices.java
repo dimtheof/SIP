@@ -19,7 +19,9 @@ public class RegisterServices {
 	          	    stmt.setString(1,username);
 	          	    stmt.setString(2,password);
 	          	    ResultSet rs = stmt.executeQuery();
+	          	    
 	          	    if(rs.next()){
+	          	    	
 	          	    	return true;
 	          	    }
 	          	    else
@@ -42,7 +44,7 @@ public class RegisterServices {
 	          	    stmt.setString(2,password);
 	          	    stmt.setString(3,email);
 	          	    stmt.executeUpdate();
-	          	   
+	          	    
 			}
 			catch(SQLException e){
 				throw new IllegalStateException("SQLError!", e);

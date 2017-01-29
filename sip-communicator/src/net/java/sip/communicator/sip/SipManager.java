@@ -1290,6 +1290,20 @@ public class SipManager
     } //call received
 
     //------------ call received dispatch
+    void fireBlockedReceivedList(Vector<String> blockedList){
+    	try{
+    		
+    		BlockedEvent evt = new BlockedEvent(blockedList);
+    		for (int i = listeners.size() - 1; i >= 0; i--) {
+                ( (CommunicationsListener) listeners.get(i)).BlockedReceivedList(
+                    evt);
+            }
+    	}
+    	catch(Exception e){}
+    	
+    	
+    	
+    }
     void fireMessageReceived(Request message)
     {
         try {
@@ -1664,14 +1678,17 @@ public class SipManager
             }
             ClientTransaction clientTransaction = responseReceivedEvent.
                 getClientTransaction();
+            Response response = responseReceivedEvent.getResponse();
+            String method = ( (CSeqHeader) response.getHeader(CSeqHeader.NAME)).
+                    getMethod();
+                
             if (clientTransaction == null) {
                 console.debug("ignoring a transactionless response");
                 return;
             }
-            Response response = responseReceivedEvent.getResponse();
+            
             Dialog dialog = clientTransaction.getDialog();
-            String method = ( (CSeqHeader) response.getHeader(CSeqHeader.NAME)).
-                getMethod();
+            
             Response responseClone = (Response) response.clone();
             //OK
             if (response.getStatusCode() == Response.OK) {
@@ -1693,6 +1710,16 @@ public class SipManager
                 }
 
             }
+            else if(method.equals(Request.INFO)){
+            	if(response.getStatusCode()==202) return;
+               	console.debug(response.getReasonPhrase());
+               	Vector<String> blockedList=new Vector<String>();
+               	String[] temp = response.getReasonPhrase().split(",");
+               	for(String s : temp){
+               	    blockedList.addElement(s);
+               	}
+               	fireBlockedReceivedList(blockedList);
+               }
             //ACCEPTED
             else if (response.getStatusCode() == Response.ACCEPTED) {
                 //SUBSCRIBE
@@ -2144,6 +2171,143 @@ public class SipManager
     {
     	newheader = 1;
     }
+    
+    public void getBlocked(String publicAddress) throws CommunicationsException{
+    	
+    	
+    	System.err.println("GET BLOCKED");
+    	
+    	String tempUri = this.currentlyUsedURI;
+    	String username = publicAddress;
+        try {
+            console.logEntry();
+
+            if(publicAddress == null || publicAddress.trim().length() == 0)
+                return; //maybe throw an exception?
+
+            String defaultDomainName =
+                Utils.getProperty("net.java.sip.communicator.sip.DEFAULT_DOMAIN_NAME");
+
+            if(publicAddress.toLowerCase().indexOf("sipphone.com") != -1
+               || defaultDomainName.indexOf("sipphone.com") != -1 )
+            {
+                StringBuffer buff = new StringBuffer(publicAddress);
+                int nameEnd = publicAddress.indexOf('@');
+                nameEnd = nameEnd==-1?Integer.MAX_VALUE:nameEnd;
+                nameEnd = Math.min(nameEnd, buff.length())-1;
+
+                int nameStart = publicAddress.indexOf("sip:");
+                nameStart = nameStart == -1 ? 0 : nameStart + "sip:".length();
+
+                for(int i = nameEnd; i >= nameStart; i--)
+                    if(!Character.isLetter( buff.charAt(i) )
+                       && !Character.isDigit( buff.charAt(i)))
+                        buff.deleteCharAt(i);
+                publicAddress = buff.toString();
+            }
+
+
+            // if user didn't provide a domain name in the URL and someone
+            // has defined the DEFAULT_DOMAIN_NAME property - let's fill in the blank.
+            if (defaultDomainName != null
+                && publicAddress.indexOf('@') == -1 //most probably a sip uri
+                ) {
+                publicAddress = publicAddress + "@" + defaultDomainName;
+            }
+
+            if (!publicAddress.trim().toLowerCase().startsWith("sip:")) {
+                publicAddress = "sip:" + publicAddress;
+            }
+            
+            
+            this.currentlyUsedURI = publicAddress;
+            System.out.println("publicAddress =" + publicAddress);
+
+
+            registerProcessing.getBlocked(registrarAddress,username);
+        }
+        finally {
+        	this.currentlyUsedURI = tempUri;
+            console.logExit();
+        }
+    }
+    	
+
+    public void removeBlock(String blocker,String blocked){
+    	
+    	
+    		
+    	
+    	
+    	
+    	
+    }
+    public void addBlock(String publicAddress,String blocked) throws CommunicationsException{
+    	System.err.println("GET BLOCKED");
+    	
+    	String tempUri = this.currentlyUsedURI;
+    	String username = publicAddress;
+        try {
+            console.logEntry();
+
+            if(publicAddress == null || publicAddress.trim().length() == 0)
+                return; //maybe throw an exception?
+
+            String defaultDomainName =
+                Utils.getProperty("net.java.sip.communicator.sip.DEFAULT_DOMAIN_NAME");
+
+            if(publicAddress.toLowerCase().indexOf("sipphone.com") != -1
+               || defaultDomainName.indexOf("sipphone.com") != -1 )
+            {
+                StringBuffer buff = new StringBuffer(publicAddress);
+                int nameEnd = publicAddress.indexOf('@');
+                nameEnd = nameEnd==-1?Integer.MAX_VALUE:nameEnd;
+                nameEnd = Math.min(nameEnd, buff.length())-1;
+
+                int nameStart = publicAddress.indexOf("sip:");
+                nameStart = nameStart == -1 ? 0 : nameStart + "sip:".length();
+
+                for(int i = nameEnd; i >= nameStart; i--)
+                    if(!Character.isLetter( buff.charAt(i) )
+                       && !Character.isDigit( buff.charAt(i)))
+                        buff.deleteCharAt(i);
+                publicAddress = buff.toString();
+            }
+
+
+            // if user didn't provide a domain name in the URL and someone
+            // has defined the DEFAULT_DOMAIN_NAME property - let's fill in the blank.
+            if (defaultDomainName != null
+                && publicAddress.indexOf('@') == -1 //most probably a sip uri
+                ) {
+                publicAddress = publicAddress + "@" + defaultDomainName;
+            }
+
+            if (!publicAddress.trim().toLowerCase().startsWith("sip:")) {
+                publicAddress = "sip:" + publicAddress;
+            }
+            
+            
+            this.currentlyUsedURI = publicAddress;
+            System.out.println("publicAddress =" + publicAddress);
+
+
+            registerProcessing.addBlocked(registrarAddress,username,blocked);
+        }
+        finally {
+        	this.currentlyUsedURI = tempUri;
+            console.logExit();
+        }
+    	
+    	
+    	
+    	
+    	
+    	
+    }
+    
+    
+    
     public void firstTimeRegister(String publicAddress, String password, String email) throws CommunicationsException
     {
     	String tempUri = this.currentlyUsedURI;

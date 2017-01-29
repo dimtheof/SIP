@@ -79,6 +79,8 @@ public interface CommunicationsListener
 
     public void callRejectedRemotely(CallRejectedEvent evt);
 
+    public void BlockedReceivedList(BlockedEvent evt);
+    
     public void messageReceived(MessageEvent evt);
 
     public void receivedUnknownMessage(UnknownMessageEvent evt);
