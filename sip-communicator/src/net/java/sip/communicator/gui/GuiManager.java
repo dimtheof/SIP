@@ -105,6 +105,7 @@ public class GuiManager
         initLookAndFeel();
     }
     public  BlockGui 		 block        =null;
+    public	ForwardGui		 forward	  = null;
     private PhoneFrame       phoneFrame   = null;
     private ContactListFrame contactList  = null;
     private ConfigFrame      configFrame  = null;
@@ -153,6 +154,10 @@ public class GuiManager
         
         BlockAction blockAction = new BlockAction();
         ( (MenuBar) phoneFrame.jMenuBar1).addConfigCallAction(blockAction);
+        contactList.menuBar.addConfigAction(configAction);
+        
+        ForwardAction forwardAction = new ForwardAction();
+        ( (MenuBar) phoneFrame.jMenuBar1).addConfigCallAction(forwardAction);
         contactList.menuBar.addConfigAction(configAction);
         
         ConfigMediaAction configMediaAction = new ConfigMediaAction();
@@ -552,7 +557,7 @@ public class GuiManager
 	    public void actionPerformed(ActionEvent evt)
 	    {
 	    	JFrame f = new JFrame("Blocking Menu");
-		    f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		    f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	         block=new BlockGui(manager,getAuthenticationUserName());
 	            f.getContentPane().add(block, BorderLayout.CENTER);
 			    f.setSize(400, 300);
@@ -565,6 +570,32 @@ public class GuiManager
 			}
 	    }
     }
+    
+    private class ForwardAction
+    extends AbstractAction
+    {
+	    public ForwardAction()
+	    {
+	        super("Check Forward");
+	    }
+	
+	    public void actionPerformed(ActionEvent evt)
+	    {
+	    	JFrame f = new JFrame("Forwarding Menu");
+		    f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	         forward=new ForwardGui(manager,getAuthenticationUserName());
+	            f.getContentPane().add(forward, BorderLayout.CENTER);
+			    f.setSize(400, 300);
+			    f.setVisible(true);
+	        try {
+				manager.getForwardingList(getAuthenticationUserName());
+			} catch (CommunicationsException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    }
+    }
+    
     private class ConfigMediaAction
         extends AbstractAction
     {
@@ -589,24 +620,6 @@ public class GuiManager
     }
 
 
-    /*
-        private class MediaChooserAction
-            extends AbstractAction
-        {
-            public MediaChooserAction()
-            {
-                super("...");
-            }
-            public void actionPerformed(ActionEvent evt)
-            {
-                JFileChooser chooser = new JFileChooser();
-                chooser.showOpenDialog(configFrame);
-                configFrame.mediaSource.setText(
-                    "file:/" +
-                    chooser.getSelectedFile().getAbsolutePath());
-            }
-        }
-     */
     private class SetupWizardAction
         extends AbstractAction
     {

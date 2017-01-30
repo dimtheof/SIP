@@ -34,37 +34,33 @@ import net.java.sip.communicator.sip.SipManager;
 
 
 
-public class BlockGui extends JPanel {
+public class ForwardGui extends JPanel {
 
 	  private static final Insets EMPTY_INSETS = new Insets(0, 0, 0, 0);
 
-	  private static final String ADD_BUTTON_LABEL = "Add";
+	  private static final String ADD_BUTTON_LABEL = "Forward";
 
-	  private static final String REMOVE_BUTTON_LABEL = "Remove";
+	  private static final String REMOVE_BUTTON_LABEL = "No Forward";
 
-	  private static final String DEFAULT_SOURCE_CHOICE_LABEL = "Blocked";
+	  private static final String DEFAULT_SOURCE_CHOICE_LABEL = "Registrations";
 
 	  private static final String DEFAULT_DEST_CHOICE_LABEL = "Unblocked";
 
 	  private JLabel sourceLabel;
+	  
+	  private JLabel forwardee;;
 
 	  private JList sourceList;
 
 	  private SortedListModel sourceListModel;
 
-	  private JList destList;
-
-	  private SortedListModel destListModel;
-
-	  private JLabel destLabel;
-
 	  private JButton addButton;
 	  private String Username;
 	  private JButton removeButton;
 	  private SipManager manager;
-	  public BlockGui(SipManager manager,String username) {
+	  public ForwardGui(SipManager manager,String username) {
 		  this.Username=username;
-		  this.manager=manager;
+		this.manager=manager;
 	    initScreen();
 	  }
 
@@ -76,21 +72,12 @@ public class BlockGui extends JPanel {
 	    sourceLabel.setText(newValue);
 	  }
 
-	  public String getDestinationChoicesTitle() {
-	    return destLabel.getText();
-	  }
-
-	  public void setDestinationChoicesTitle(String newValue) {
-	    destLabel.setText(newValue);
-	  }
+	
 
 	  public void clearSourceListModel() {
 	    sourceListModel.clear();
 	  }
 
-	  public void clearDestinationListModel() {
-	    destListModel.clear();
-	  }
 
 	  public void addSourceElements(ListModel newValue) {
 	    fillListModel(sourceListModel, newValue);
@@ -101,9 +88,6 @@ public class BlockGui extends JPanel {
 	    addSourceElements(newValue);
 	  }
 
-	  public void addDestinationElements(ListModel newValue) {
-	    fillListModel(destListModel, newValue);
-	  }
 
 	  private void fillListModel(SortedListModel model, ListModel newValues) {
 	    int size = newValues.getSize();
@@ -121,9 +105,6 @@ public class BlockGui extends JPanel {
 	    addSourceElements(newValue);
 	  }
 
-	  public void addDestinationElements(Object newValue[]) {
-	    fillListModel(destListModel, newValue);
-	  }
 
 	  private void fillListModel(SortedListModel model, Object newValues[]) {
 	    model.addAll(newValues);
@@ -133,9 +114,6 @@ public class BlockGui extends JPanel {
 	    return sourceListModel.iterator();
 	  }
 
-	  public Iterator destinationIterator() {
-	    return destListModel.iterator();
-	  }
 
 	  public void setSourceCellRenderer(ListCellRenderer newValue) {
 	    sourceList.setCellRenderer(newValue);
@@ -145,36 +123,16 @@ public class BlockGui extends JPanel {
 	    return sourceList.getCellRenderer();
 	  }
 
-	  public void setDestinationCellRenderer(ListCellRenderer newValue) {
-	    destList.setCellRenderer(newValue);
-	  }
-
-	  public ListCellRenderer getDestinationCellRenderer() {
-	    return destList.getCellRenderer();
-	  }
-
-	  public void setVisibleRowCount(int newValue) {
-	    sourceList.setVisibleRowCount(newValue);
-	    destList.setVisibleRowCount(newValue);
-	  }
-
 	  public int getVisibleRowCount() {
 	    return sourceList.getVisibleRowCount();
 	  }
 
-	  public void setSelectionBackground(Color newValue) {
-	    sourceList.setSelectionBackground(newValue);
-	    destList.setSelectionBackground(newValue);
-	  }
+	 
 
 	  public Color getSelectionBackground() {
 	    return sourceList.getSelectionBackground();
 	  }
 
-	  public void setSelectionForeground(Color newValue) {
-	    sourceList.setSelectionForeground(newValue);
-	    destList.setSelectionForeground(newValue);
-	  }
 
 	  public Color getSelectionForeground() {
 	    return sourceList.getSelectionForeground();
@@ -188,15 +146,10 @@ public class BlockGui extends JPanel {
 	    sourceList.getSelectionModel().clearSelection();
 	  }
 
-	  private void clearDestinationSelected() {
-	    Object selected[] = destList.getSelectedValues();
-	    for (int i = selected.length - 1; i >= 0; --i) {
-	      destListModel.removeElement(selected[i]);
-	    }
-	    destList.getSelectionModel().clearSelection();
+	  public void setForwardee(String forwardee){
+		  this.forwardee.setText("Forwarding to "+forwardee);
 	  }
 	  private void clearall() {
-		    destListModel.clear();
 		    sourceListModel.clear();
 		   
 		  }
@@ -225,136 +178,60 @@ public class BlockGui extends JPanel {
 	            0, 5, 0, 5), 0, 0));
 	    removeButton.addActionListener(new RemoveListener());
 
-	    destLabel = new JLabel(DEFAULT_DEST_CHOICE_LABEL);
-	    destListModel = new SortedListModel();
-	    destList = new JList(destListModel);
-	    add(destLabel, new GridBagConstraints(2, 0, 1, 1, 0, 0,
-	        GridBagConstraints.CENTER, GridBagConstraints.NONE,
-	        EMPTY_INSETS, 0, 0));
-	    add(new JScrollPane(destList), new GridBagConstraints(2, 1, 1, 5, .5,
-	        1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-	        EMPTY_INSETS, 0, 0));
+	    forwardee = new JLabel();
+	    add(forwardee, new GridBagConstraints(1, 6, 1, 2, 0, .25,
+		        GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(
+		            0, 5, 0, 5), 0, 0));
+	    
 	    setVisible(true);
 	    
 	  }
-/*
-	  public static void main(String args[]) {
-	    JFrame f = new JFrame("Dual List Box Tester");
-	    f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	    BlockGui dual = new BlockGui();
-	    try{  
-		    Class.forName("com.mysql.jdbc.Driver");  
-		    Connection con=DriverManager.getConnection(  
-		    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
-		   		    
-		    
 
-		    String userName ="kanell21";
-		    
-		    PreparedStatement select_login= null;
-		    String selectQuery="select Blocked from soft_eng_database.Blocking where blocker = ? ";
-		    select_login = con.prepareStatement(selectQuery);
-		    select_login.setString(1,userName);
-		    
-		    
-		    
-		   // System.out.println(userName);
-		    //System.out.println(new String(password));
-		    
-		    
-		    int exists=0;	 
-		    ResultSet rs;
-		    rs=select_login.executeQuery();
-		    
-		    while(rs.next()){  
-		    	
-		    	dual.addSourceElements(new String[] {(rs.getString(1))});
-		    
-		    	}
-		    
-		    
-		    ResultSet rs2;
-		    selectQuery="SELECT reg_username as Username "+
-		    		    "FROM soft_eng_database.Registrations as R "+
-		    		    "where not exists(select * from soft_eng_database.Blocking where Blocker= ? and Blocked=R.reg_username ) and reg_username!= ?" ;
-		    		
-		    PreparedStatement unblocked_st= null;
-		    unblocked_st= con.prepareStatement(selectQuery);
-		    unblocked_st.setString(1,userName);
-		    unblocked_st.setString(2,userName);
-		    //System.out.println(selectQuery);
-		    rs2=unblocked_st.executeQuery();
-		    while(rs2.next()){  
-		    	//System.out.println(rs2.getString(1));
-		    	dual.addDestinationElements(new String[] {rs2.getString(1)});
-		    
-		    	}
-		    
-		 }
-	    catch(Exception e)
-	    {
-	    	
-	    	
-	    	
-	    
-	    }
-	    
-	    f.getContentPane().add(dual, BorderLayout.CENTER);
-	    f.setSize(400, 300);
-	    f.setVisible(true);
-	  }
-	  */
 
 	  private class AddListener implements ActionListener {
 
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
 			// TODO Auto-generated method stub
-			Object select[]= destList.getSelectedValues();
-			if(destList.getSelectedValues()==null) return;
+			Object select[]= sourceList.getSelectedValues();
+			if(sourceList.getSelectedValues()==null) return;
 			else
 				try {
-					manager.addBlock(Username,select[0].toString());
+					manager.addForward(Username, select[0].toString());
+					Thread.sleep(400);
 					clearall();
-
-					manager.getBlocked(Username);
+					manager.getForwardingList(Username);
 				} catch (CommunicationsException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			
 		}
-
+		  
 	  }
 
 	  private class RemoveListener implements ActionListener {
 
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				// TODO Auto-generated method stub
-				Object select[]= sourceList.getSelectedValues();
-				if(sourceList.getSelectedValues()==null) return;
-				else if(select.length<1) return;
-				else
-					try {
-						manager.removeBlock(Username,select[0].toString());
-						clearall();
-						try {
-							Thread.sleep(500);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						manager.getBlocked(Username);
-					} catch (CommunicationsException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-			}
-			  
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			// TODO Auto-generated method stub
+				try {
+					manager.addForward(Username, null);
+					Thread.sleep(400);
+					clearall();
+					manager.getForwardingList(Username);
+				} catch (CommunicationsException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 		}
-		 
-	
+	}
 
 	class SortedListModel extends AbstractListModel {
 

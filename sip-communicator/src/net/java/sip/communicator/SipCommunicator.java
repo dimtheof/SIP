@@ -1114,4 +1114,21 @@ public class SipCommunicator
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void ForwardReceivedList(ForwardEvent evt) {
+		// TODO Auto-generated method stub
+		String temp;
+		Iterator<String> itr=evt.getVector().iterator();
+		temp = itr.next();
+		guiManager.forward.setForwardee(temp);
+		 while(itr.hasNext()){
+			 temp = itr.next();
+			 guiManager.forward.addSourceElements(new String[]{(temp)});
+		     //System.out.println(temp + "... ");
+		   }
+		  return;
+		// TODO Auto-generated method stub
+		
+	}
 }

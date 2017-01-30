@@ -64,6 +64,7 @@ public class Proxy implements SipListener  {
     protected boolean has_been_forwarded;
     protected RegisterServices reg_services;
     protected BlockingService blservice;
+    protected ForwardingService fwservice;
     protected HashMap<String, ServerTransaction> serverTransactionMap;
     public RequestForwarding getRequestForwarding() {
         return requestForwarding;
@@ -174,6 +175,7 @@ public class Proxy implements SipListener  {
                     serverTransactionMap= new HashMap<String, ServerTransaction>();
                     reg_services = new RegisterServices();
                     blservice=new BlockingService();
+                    fwservice = new ForwardingService();
                 }
             }
             catch (Exception ex) {
@@ -261,18 +263,6 @@ public class Proxy implements SipListener  {
 	    	    	requestURI = addressFactory.createURI("sip:" + finalReceiver + "@" + final_piece_uri);
 	    	    	((ToHeader) request.getHeader(ToHeader.NAME)).getAddress().setURI(requestURI);
 	    	    } 
-	    	    
-	    	    if(finalReceiver.equals("cycle_detected")){
-	    	    	Response response=messageFactory.createResponse
-	    	                (Response.FORBIDDEN,request);
-	    	    	response.setReasonPhrase("Forwarding Cycle exists");
-	    	                if (serverTransaction!=null)
-	    	                       serverTransaction.sendResponse(response);
-	    	                else sipProvider.sendResponse(response);
-	    	    }
-	    	    else if(bf.checkIfBlocked(sender, finalReceiver) == true){
-	    	    	finalReceiver = null;
-	    	    }
 	    	    if(finalReceiver== null){
 	    	    	Response response=messageFactory.createResponse
 	    	                (Response.FORBIDDEN,request);
@@ -281,6 +271,28 @@ public class Proxy implements SipListener  {
 	    	                       serverTransaction.sendResponse(response);
 	    	                else sipProvider.sendResponse(response);
 	    	    }
+	    	    else {
+	    	    	if(finalReceiver.equals("cycle_detected")){
+		    	    	Response response=messageFactory.createResponse
+		    	                (Response.FORBIDDEN,request);
+		    	    	response.setReasonPhrase("Forwarding Cycle exists");
+		    	                if (serverTransaction!=null)
+		    	                       serverTransaction.sendResponse(response);
+		    	                else sipProvider.sendResponse(response);
+		    	    }
+		    	    else if(bf.checkIfBlocked(sender, finalReceiver) == true){
+		    	    	finalReceiver = null;
+		    	    }
+		    	    if(finalReceiver== null){
+		    	    	Response response=messageFactory.createResponse
+		    	                (Response.FORBIDDEN,request);
+		    	    	response.setReasonPhrase("Blocked by some forwardee");
+		    	                if (serverTransaction!=null)
+		    	                       serverTransaction.sendResponse(response);
+		    	                else sipProvider.sendResponse(response);
+		    	    }
+	    	    }
+	    	    
 	    	    
 	    	    
         	}
@@ -740,15 +752,83 @@ public class Proxy implements SipListener  {
         				serverTransaction.sendResponse(response);
         			else{
         		  	  	sipProvider.sendResponse(response);
-        				ProxyDebug.println ("Proxy: Blocked users were sent back. Responded 201");
+        				ProxyDebug.println ("Proxy: Blocked users were sent back. Responded 202");
+        				return;
+        				}
+             	}
+             	
+             	else if(request_parts[0].equals("Remove Blocked")){
+                    
+             		String from_header = request.getHeader(FromHeader.NAME).toString();
+            		String uri_extracted_sip = from_header.split("sip:")[1];
+            		String request_sender_username = uri_extracted_sip.split("@")[0];
+            		String blocked;
+            		System.out.println("Got INFO!");
+            		System.out.println("INFO : " + request_parts[0]);
+            		System.out.println("sender : " + request_sender_username);
+            		System.out.println("blocked : " + request_parts[2]);      		
+            		blservice.unblock(request_sender_username,request_parts[2]);
+            		Response response = messageFactory.createResponse(203,request);
+        			if (serverTransaction!=null)		
+        				serverTransaction.sendResponse(response);
+        			else{
+        		  	  	sipProvider.sendResponse(response);
+        				ProxyDebug.println ("Proxy: Blocked users were sent back. Responded 203");
         				return;
         				}
              		
              		
              	}
              	
-             	
-             	
+             	else if(request_parts[0].equals("Get Forward")){
+                    
+             		String from_header = request.getHeader(FromHeader.NAME).toString();
+            		String uri_extracted_sip = from_header.split("sip:")[1];
+            		String request_sender_username = uri_extracted_sip.split("@")[0];
+            		
+            		System.out.println("Got INFO!");
+            		System.out.println("INFO : " + request_parts[0]);
+            		System.out.println("sender : " + request_sender_username);
+            		
+            		Vector<String> forward1 = fwservice.getForwardingList(request_sender_username);
+            		String[] forwardList=(String[]) forward1.toArray(new String[forward1.size()]);
+            		String forwarded_users_content = "";
+            		for(int i = 0; i < forwardList.length; i++){
+            			if(i != forwardList.length - 1 )
+            				forwarded_users_content = forwarded_users_content + forwardList[i] + ",";
+            			else
+            				forwarded_users_content = forwarded_users_content + forwardList[i];
+            		}
+            		
+            		Response response = messageFactory.createResponse(204,request);
+        			response.setReasonPhrase(forwarded_users_content);
+        			if (serverTransaction!=null)		
+        				serverTransaction.sendResponse(response);
+        			else{
+        		  	  	sipProvider.sendResponse(response);
+        				ProxyDebug.println ("Proxy: Forward users were sent back. Responded 204");
+        				return;
+        				}
+             	}
+             	else if(request_parts[0].equals("Add Forward")){
+                    
+             		String from_header = request.getHeader(FromHeader.NAME).toString();
+            		String uri_extracted_sip = from_header.split("sip:")[1];
+            		String request_sender_username = uri_extracted_sip.split("@")[0];
+            		String blocked;
+            		System.out.println("Got INFO!");
+            		System.out.println("INFO : " + request_parts[0]);
+            		System.out.println("sender : " + request_sender_username);  		
+            		fwservice.addForwarding(request_sender_username,request_parts[2]);
+            		Response response = messageFactory.createResponse(205,request);
+        			if (serverTransaction!=null)		
+        				serverTransaction.sendResponse(response);
+        			else{
+        		  	  	sipProvider.sendResponse(response);
+        				ProxyDebug.println ("Proxy: Forwarding set. Responded 205");
+        				return;
+        				}
+             	}
              	
              }
         

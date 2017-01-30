@@ -47,6 +47,8 @@ public class Blocking_and_Forwarding {
 			return uriString.substring(uriString.indexOf("sip:") + 4,
 					uriString.indexOf("@"));
 	}
+		
+		
 	
 		public boolean checkIfForwarding(String username) throws SQLException{
 			try{
@@ -69,7 +71,7 @@ public class Blocking_and_Forwarding {
 			}
 		}
 		
-		public boolean checkIfBlocked(String blocker, String blocked) throws SQLException{
+		public boolean checkIfBlocked(String blocked, String blocker) throws SQLException{
 			try{
 			Connection con=DriverManager.getConnection(  
 	          	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  

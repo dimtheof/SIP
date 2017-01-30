@@ -75,4 +75,35 @@ public class BlockingService {
 		return ;
 	
 	}	
+	
+	public void unblock(String username,String Blocked){
+		try{  
+	  	    //Class.forName("com.mysql.jdbc.Driver");  
+	  	    Connection con=DriverManager.getConnection(  
+	  	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
+	  	   
+	  	    
+	  	    PreparedStatement rm_block= null;
+	  	    String updateQuery="DELETE from soft_eng_database.Blocking where Blocker= ? and Blocked= ? ";
+	  	    rm_block = con.prepareStatement(updateQuery);
+	  	    rm_block.setString(1,username);
+	  	    rm_block.setString(2,Blocked);
+	  	    rm_block.executeUpdate();
+	  	    
+	  	    
+	  	    
+	  	    
+	  	   // System.out.println(userName);
+	  	    //System.out.println(new String(password));
+	  	    
+	      
+	     }
+	      catch(SQLException e1)
+	     {
+	    	  System.err.println("Message: " + e1.getMessage());
+	     
+	     }
+		return ;
+	
+	}
 }
