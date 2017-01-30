@@ -12,9 +12,9 @@
 - Enable Billing .. DONE
 - Migrate Register to Proxy .. DONE
 - Migrate Login to Proxy .. DONE
-- Migrate Forwarding GUI to Proxy ..
-- Migrate Blocking GUI to Proxy ..
-- Migrate Billing Policy to Proxy ..
+- Migrate Forwarding GUI to Proxy .. DONE
+- Migrate Blocking GUI to Proxy .. DONE
+- Migrate Billing Policy to Proxy .. DONE
 
 
 ------------------------------------------------------------------
