@@ -165,49 +165,6 @@ public class RegistrationGUI extends JDialog{
 					
 					disappear();
 					
-					/*
-					String url = "jdbc:mysql://localhost:3306/soft_eng_database";
-					String dbusername = "root";
-					String dbpassword = "root";
-					String query;
-					System.out.println("Connecting database...");
-
-					try (Connection connection = DriverManager.getConnection(url, dbusername, dbpassword)) {
-					    System.out.println("Database connected!");
-					    query = "select * from registrations where reg_username = \""+username+"\"";
-					    Statement stmt = connection.createStatement();
-					    ResultSet rs = stmt.executeQuery(query);
-					    if(rs.next()){
-					    	JOptionPane.showMessageDialog(frmRegistrationForm, "Username already exists.");
-					    	return;
-					    }
-					    else System.out.println("acceptable username");
-					    query = "select * from registrations where reg_email_address = \""+email+"\"";
-					    stmt = connection.createStatement();
-					    rs = stmt.executeQuery(query);
-					    if(rs.next()){
-					    	JOptionPane.showMessageDialog(frmRegistrationForm, "Email already registered.");
-					    	return;
-					    }
-					    else System.out.println("acceptable email");
-					    query = " insert into registrations (reg_username, reg_pass, reg_email_address)"
-					            + " values (?, ?, ?)";
-					    PreparedStatement preparedStmt = (PreparedStatement) connection.prepareStatement(query);
-					    preparedStmt.setString(1,username);
-					    preparedStmt.setString(2,new String(password));
-					    preparedStmt.setString(3,email);
-					    if(preparedStmt.executeUpdate()==0){
-					    	JOptionPane.showMessageDialog(frmRegistrationForm, "Registration failed.");
-					    	System.out.println("Registration failed.");
-					    }
-					    else{
-					    	JOptionPane.showMessageDialog(frmRegistrationForm, "Registration complete.");
-					    	System.out.println("Registration complete.");
-					    }
-					    frmRegistrationForm.dispatchEvent(new WindowEvent(frmRegistrationForm, WindowEvent.WINDOW_CLOSING));
-					} catch (SQLException e) {
-					    throw new IllegalStateException("Cannot connect the database!", e);
-					}*/
 				}
 			});
 			GridBagConstraints gbc_btnNewButton = new GridBagConstraints();

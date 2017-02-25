@@ -45,6 +45,23 @@ public class RegisterServices {
 	          	    stmt.setString(3,email);
 	          	    stmt.executeUpdate();
 	          	    
+	          	    query="INSERT INTO soft_eng_database.Calls (Calls_caller, Calls_tcallee, Calls_charge, Calls_start_time)"
+	          	    		+ " VALUES (?, ?, ?, ?)";
+	          	    stmt = con.prepareStatement(query);
+	          	    stmt.setString(1,username);
+	          	    stmt.setString(2,"none");
+	          	    stmt.setInt(3, 0);
+	          	    stmt.setInt(4, 0);
+	          	    stmt.executeUpdate();
+	          	    
+	          	    query="INSERT INTO soft_eng_database.BIlling (Billing_username, Billing_Policy, Billing_Debt)"
+	          	    		+ " VALUES (?, ?, ?)";
+	          	    stmt = con.prepareStatement(query);
+	          	    stmt.setString(1,username);
+	          	    stmt.setString(2,"high");
+	          	    stmt.setInt(3, 0);
+	          	    stmt.executeUpdate();
+	          	    
 			}
 			catch(SQLException e){
 				throw new IllegalStateException("SQLError!", e);

@@ -293,7 +293,7 @@ public class Proxy implements SipListener  {
 		    	    }
 	    	    }
 	    	    
-	    	    
+	    	    return;
 	    	    
         	}
         	catch(Exception e){

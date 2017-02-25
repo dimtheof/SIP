@@ -13,6 +13,9 @@ import gov.nist.sip.proxy.registrar.*;
 
 public class ListenerProxy {
  
+	protected Thread checkpointThread;
+	protected Checkpoint checkpoint;
+	protected HandleOpenBills handleBills;
     protected ProxyLauncher proxyLauncher;
     protected ConfigurationFrame configurationFrame;
     protected HelpBox helpBox;
@@ -126,7 +129,13 @@ public class ListenerProxy {
                     PROXY_STARTED=true;
                     proxyLauncher.proxyButton.setBackground(new Color(51,153,255));
                     proxyLauncher.proxyButton.setText("Stop the proxy");
-
+                    handleBills = new HandleOpenBills();
+                    System.out.print("Handling open bills.. ");
+                    handleBills.handle();
+                    System.out.println("OK");
+                    checkpoint = new Checkpoint();
+                    checkpointThread = new Thread(checkpoint);
+                    checkpointThread.start();
                 }
                 else {
                     new AlertFrame("ERROR: the configuration parameters are not correct!",
@@ -151,7 +160,10 @@ public class ListenerProxy {
             
             proxyLauncher.proxyButton.setBackground(ProxyLauncher.buttonBackGroundColor);
             proxyLauncher.proxyButton.setText("Start the proxy");
-        
+            if(checkpointThread != null)
+            	if(checkpointThread.isAlive())
+            		checkpointThread.stop();
+            
             Proxy proxy=proxyLauncher.getProxy();
             RegistrationsList registrationsList=proxyLauncher.getRegistrationsList();
             registrationsList.clean();
