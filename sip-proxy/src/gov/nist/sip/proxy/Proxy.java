@@ -270,6 +270,7 @@ public class Proxy implements SipListener  {
 	    	                if (serverTransaction!=null)
 	    	                       serverTransaction.sendResponse(response);
 	    	                else sipProvider.sendResponse(response);
+	    	        return;
 	    	    }
 	    	    else {
 	    	    	if(finalReceiver.equals("cycle_detected")){
@@ -279,6 +280,7 @@ public class Proxy implements SipListener  {
 		    	                if (serverTransaction!=null)
 		    	                       serverTransaction.sendResponse(response);
 		    	                else sipProvider.sendResponse(response);
+		    	        return;
 		    	    }
 		    	    else if(bf.checkIfBlocked(sender, finalReceiver) == true){
 		    	    	finalReceiver = null;
@@ -290,10 +292,10 @@ public class Proxy implements SipListener  {
 		    	                if (serverTransaction!=null)
 		    	                       serverTransaction.sendResponse(response);
 		    	                else sipProvider.sendResponse(response);
+		    	        return;
 		    	    }
 	    	    }
 	    	    
-	    	    return;
 	    	    
         	}
         	catch(Exception e){

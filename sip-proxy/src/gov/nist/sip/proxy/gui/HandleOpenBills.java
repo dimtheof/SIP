@@ -27,14 +27,12 @@ public class HandleOpenBills {
 	          	  	if(!rs.next())
 	          	  		return;
 	          	    tEnd = rs.getLong(1);
-	          	    System.out.println("got timestamp "+tEnd);
 	          	    query="SELECT Calls_caller,Calls_start_time FROM soft_eng_database.Calls "
 	          	    		+ "WHERE Calls_charge = 1";
 	          	    stmt = con.prepareStatement(query);
 	          	    rs = stmt.executeQuery();
-	          	    System.out.println("bfr while...");
 	          	    while(rs.next()){
-	          	    	System.out.println("Open bill...");
+	          	    	System.out.println("Open bill found...");
 	          	    	caller = rs.getString(1);
 					    tStart = rs.getLong(2);
 						long tDelta = tEnd - tStart;

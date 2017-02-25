@@ -22,7 +22,6 @@ public class Checkpoint implements Runnable{
 	      	    time = System.currentTimeMillis();
 	      	    stmt.setLong(1, time);
 	      	    stmt.executeUpdate();
-	      	    System.out.println("Checkpoint: "+ time);
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
