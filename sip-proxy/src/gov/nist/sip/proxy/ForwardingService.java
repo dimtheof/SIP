@@ -36,6 +36,7 @@ public class ForwardingService {
 		    	    	list.addElement(rs.getString(1));
 		    	    
 		    	    	}
+		    	    con.close();
 		    	    return list;
 			}
 			catch(SQLException e){
@@ -66,6 +67,7 @@ public class ForwardingService {
 		    	    stmt.setString(1,username);
 		    	    stmt.setString(2,forwardee);
 		    	    stmt.executeUpdate();
+		    	    con.close();
 		    	    return;
 		    	    
 			}

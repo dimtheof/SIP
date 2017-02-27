@@ -61,10 +61,13 @@ public class Blocking_and_Forwarding {
 	          	    stmt.setString(1,username);
 	          	    ResultSet rs = stmt.executeQuery();
 	          	    if(rs.next()){
+	          	    	con.close();
 	          	    	return true;
 	          	    }
-	          	    else
+	          	    else{
+	          	    	con.close();	
 	          	    	return false;
+	          	    }
 			}
 			catch(SQLException e){
 				throw new IllegalStateException("SQLError!", e);
@@ -83,10 +86,13 @@ public class Blocking_and_Forwarding {
 	          	    stmt.setString(2,blocked);
 	          	    ResultSet rs = stmt.executeQuery();
 	          	    if(rs.next()){
+	          	    	con.close();
 	          	    	return true;
 	          	    }
-	          	    else
+	          	    else{
+	          	    	con.close();
 	          	    	return false;
+	          	    	}
 			}
 			catch(SQLException e){
 				throw new IllegalStateException("SQLError!", e);
@@ -96,8 +102,7 @@ public class Blocking_and_Forwarding {
 		public String findFinalReceiver(String caller, String callee){   // R E T U R N      F I N A L    C A L L E E 
 			
 			try{    
-          	    Connection con=DriverManager.getConnection(  
-          	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root");  
+          	     
           	    if(checkIfBlocked(caller,callee) == true){
           	    	return null;
           	    }
@@ -108,6 +113,8 @@ public class Blocking_and_Forwarding {
         	    	return callee;
         	    }
           	    else{
+          	    	Connection con=DriverManager.getConnection(  
+                  	    "jdbc:mysql://localhost:3306/soft_eng_database","root","root"); 
           	    		int i = 0;
           	    		PreparedStatement stmt = null;
           	    		String query = null, newCallee = callee;
@@ -137,6 +144,7 @@ public class Blocking_and_Forwarding {
         			    else break;
         		    	
         		    } while (++i<50);
+          	    	con.close();
           	    	if(i < 50){
           	    		return newCallee;
           	    	}
@@ -161,10 +169,13 @@ public class Blocking_and_Forwarding {
 		          	    stmt.setString(1,username);
 		          	    ResultSet rs = stmt.executeQuery();
 		          	    if(rs.next()){
+		          	    	con.close();
 		          	    	return true;
 		          	    }
-		          	    else
+		          	    else{
+		          	    	con.close();
 		          	    	return false;
+		          	    }
 				}
 				catch(SQLException e){
 					throw new IllegalStateException("SQLError!", e);

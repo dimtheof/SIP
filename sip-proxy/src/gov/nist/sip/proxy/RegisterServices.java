@@ -21,11 +21,13 @@ public class RegisterServices {
 	          	    ResultSet rs = stmt.executeQuery();
 	          	    
 	          	    if(rs.next()){
-	          	    	
+	          	    	con.close();
 	          	    	return true;
 	          	    }
-	          	    else
+	          	    else{
+	          	    	con.close();
 	          	    	return false;
+	          	    	}
 			}
 			catch(SQLException e){
 				throw new IllegalStateException("SQLError!", e);
@@ -61,6 +63,7 @@ public class RegisterServices {
 	          	    stmt.setString(2,"high");
 	          	    stmt.setInt(3, 0);
 	          	    stmt.executeUpdate();
+	          	  con.close();
 	          	    
 			}
 			catch(SQLException e){

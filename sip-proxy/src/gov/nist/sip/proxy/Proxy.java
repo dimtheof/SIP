@@ -62,6 +62,8 @@ public class Proxy implements SipListener  {
     protected RequestForwarding requestForwarding;
     protected ResponseForwarding responseForwarding;
     protected boolean has_been_forwarded;
+    protected boolean cycle_detected;
+    protected boolean block_detected;
     protected RegisterServices reg_services;
     protected BlockingService blservice;
     protected ForwardingService fwservice;
@@ -246,10 +248,12 @@ public class Proxy implements SipListener  {
         	String final_piece_uri = uri_extracted_sip.split("@")[1];
         	requestURI = request.getRequestURI();
     		has_been_forwarded = false;
-    		
+    		cycle_detected = false;
+    		block_detected = false;
         	try{
 	    	    if(bf.checkIfBlocked(sender, receiver) == true){
 	    	    	finalReceiver = null;
+	    	    	block_detected = true;
 	    	    }
 	    	    else if(bf.checkIfForwarding(receiver) == false){
 	    	    	finalReceiver = receiver;
@@ -263,40 +267,15 @@ public class Proxy implements SipListener  {
 	    	    	requestURI = addressFactory.createURI("sip:" + finalReceiver + "@" + final_piece_uri);
 	    	    	((ToHeader) request.getHeader(ToHeader.NAME)).getAddress().setURI(requestURI);
 	    	    } 
-	    	    if(finalReceiver== null){
-	    	    	Response response=messageFactory.createResponse
-	    	                (Response.FORBIDDEN,request);
-	    	    	response.setReasonPhrase("You have been blocked");
-	    	                if (serverTransaction!=null)
-	    	                       serverTransaction.sendResponse(response);
-	    	                else sipProvider.sendResponse(response);
-	    	        return;
-	    	    }
-	    	    else {
+	    	    if(finalReceiver != null){
 	    	    	if(finalReceiver.equals("cycle_detected")){
-		    	    	Response response=messageFactory.createResponse
-		    	                (Response.FORBIDDEN,request);
-		    	    	response.setReasonPhrase("Forwarding Cycle exists");
-		    	                if (serverTransaction!=null)
-		    	                       serverTransaction.sendResponse(response);
-		    	                else sipProvider.sendResponse(response);
-		    	        return;
+		    	    	cycle_detected = true;
 		    	    }
 		    	    else if(bf.checkIfBlocked(sender, finalReceiver) == true){
 		    	    	finalReceiver = null;
-		    	    }
-		    	    if(finalReceiver== null){
-		    	    	Response response=messageFactory.createResponse
-		    	                (Response.FORBIDDEN,request);
-		    	    	response.setReasonPhrase("Blocked by some forwardee");
-		    	                if (serverTransaction!=null)
-		    	                       serverTransaction.sendResponse(response);
-		    	                else sipProvider.sendResponse(response);
-		    	        return;
+		    	    	block_detected = true;
 		    	    }
 	    	    }
-	    	    
-	    	    
         	}
         	catch(Exception e){
         		throw new IllegalStateException(null, e);
@@ -305,9 +284,6 @@ public class Proxy implements SipListener  {
 		
 		
 		//=====================================================================
-		
-		
-		
 		
         try {
             
@@ -405,7 +381,8 @@ public class Proxy implements SipListener  {
                     		String temp_uri = request.getHeader(ToHeader.NAME).toString();
                     		uri_extracted_sip = temp_uri.split("sip:")[1];
                     		String request_receiver_username = uri_extracted_sip.split("@")[0];
-                    		if( bf.checkIfBlocked(request_receiver_username,request_sender_username ) ){
+                    		if( bf.checkIfBlocked(request_receiver_username,request_sender_username ) 
+                    				|| block_detected){
                     			Response response = messageFactory.createResponse(480,request);
                     			response.setReasonPhrase("The other user is temporarily anavailable");
                     			if (serverTransaction!=null)		
@@ -413,6 +390,17 @@ public class Proxy implements SipListener  {
                     			else{
                     		  	  	sipProvider.sendResponse(response);
                     				ProxyDebug.println ("Proxy: the other user had blocked this user. Responded 480 - Temporarily Unavailable");
+                    				return;
+                    	 		}
+                    		}
+                    		else if (cycle_detected){
+                    			Response response = messageFactory.createResponse(480,request);
+                    			response.setReasonPhrase("Forwarding cycle detected");
+                    			if (serverTransaction!=null)		
+                    				serverTransaction.sendResponse(response);
+                    			else{
+                    		  	  	sipProvider.sendResponse(response);
+                    				ProxyDebug.println ("Proxy: cycle detected. Responded 480 - Temporarily Unavailable");
                     				return;
                     	 		}
                     		}

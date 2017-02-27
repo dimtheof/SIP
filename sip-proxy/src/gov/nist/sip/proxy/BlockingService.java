@@ -39,6 +39,7 @@ public class BlockingService {
 		    	    	blunbl.addElement(rs.getString(1));
 		    	    
 		    	    	}
+		    	    con.close();
 		    	    return blunbl;
 			}
 			catch(SQLException e){
@@ -59,7 +60,7 @@ public class BlockingService {
 	  	    add_block.setString(2,Blocked);
 	  	    add_block.executeUpdate();
 	  	    
-	  	    
+	  	  con.close();
 	  	    
 	  	    
 	  	   // System.out.println(userName);
@@ -72,6 +73,7 @@ public class BlockingService {
 	    	  System.err.println("Message: " + e1.getMessage());
 	     
 	     }
+		
 		return ;
 	
 	}	
@@ -90,7 +92,7 @@ public class BlockingService {
 	  	    rm_block.setString(2,Blocked);
 	  	    rm_block.executeUpdate();
 	  	    
-	  	    
+	  	  con.close();
 	  	    
 	  	    
 	  	   // System.out.println(userName);
