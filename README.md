@@ -3,5 +3,5 @@
 
 Software engineering project that extends SIP communicator. 
 
-Collaborators: Kanellopoulos Konstantinos 
+Collaborators: Kanellopoulos Konstantinos &
                Theofilatos Dimosthenis
